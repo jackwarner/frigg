@@ -1,0 +1,753 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Creates a pipeline responsible for instantiating all other pipelines.",
+  "Parameters": {
+    "PipelineGitRepo": {
+      "Type": "String",
+      "Description": "The name of the existing GitHub repository that contains the source code to build.",
+      "Default": "child-pipelines",
+      "AllowedValues": [
+        "child-pipelines"
+      ]
+    },
+    "PipelineGitBranch": {
+      "Type": "String",
+      "Description": "A branch is maintained per supported account to allow for future changes to MotherHen - see TODO",
+      "AllowedValues": [
+        "dev",
+        "ECR",
+        "preprod",
+        "prod",
+        "jack"
+      ]
+    },
+    "TaggedVersion": {
+      "Type": "String",
+      "Description": "Releasable version as tagged in GitHub used in CodeBuild project name - no '.' characters allowed!",
+      "AllowedValues": [
+        "v6",
+        "v7",
+        "v8",
+        "v9",
+        "v10",
+        "v12"
+      ]
+    },
+    "DeployedBy": {
+      "Type": "String",
+      "Description": "Github username of person deploying MotherHen. Stack is tagged with username.",
+      "AllowedValues": [
+        "jackwarner",
+        "paulSambolin",
+        "brett-grosvenor"
+      ]
+    },
+    "LastUpdatedBy": {
+      "Type": "String",
+      "Description": "The Github username of person updating MotherHen.",
+      "AllowedValues": [
+        "never_updated",
+        "jackwarner",
+        "paulSambolin"
+      ]
+    },
+    "GitRepoOwner": {
+      "Type": "String",
+      "Default": "pariveda-serverless",
+      "Description": "The GitHub repository owner"
+    },
+    "GitOAuthToken": {
+      "Type": "String",
+      "Description": "The Github user's Personal Access Token",
+      "NoEcho": true
+    },
+    "PipelineName": {
+      "Type": "String",
+      "Default": "mother-hen",
+      "Description": "The name of the mother hen pipeline"
+    },
+    "ServerlessFrameworkEcrImage": {
+      "Type": "String",
+      "Description": "The ECR image identifier for serverless framework"
+    }
+  },
+  "Resources": {
+    "ArtifactBuildPipeline": {
+      "Type": "AWS::CodePipeline::Pipeline",
+      "Properties": {
+        "ArtifactStore": {
+          "Location": {
+            "Ref": "CodePipelineWorkspaceBucket"
+          },
+          "Type": "S3"
+        },
+        "Name": {
+          "Ref": "PipelineName"
+        },
+        "RestartExecutionOnUpdate": true,
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "CodePipelineServiceRole",
+            "Arn"
+          ]
+        },
+        "Stages": [
+          {
+            "Name": "Source",
+            "Actions": [
+              {
+                "Name": "Pipelines",
+                "ActionTypeId": {
+                  "Version": "1",
+                  "Category": "Source",
+                  "Owner": "ThirdParty",
+                  "Provider": "GitHub"
+                },
+                "Configuration": {
+                  "Owner": {
+                    "Ref": "GitRepoOwner"
+                  },
+                  "Repo": {
+                    "Ref": "PipelineGitRepo"
+                  },
+                  "Branch": {
+                    "Ref": "PipelineGitBranch"
+                  },
+                  "OAuthToken": {
+                    "Ref": "GitOAuthToken"
+                  }
+                },
+                "InputArtifacts": [],
+                "OutputArtifacts": [
+                  {
+                    "Name": "PipelineSource"
+                  }
+                ],
+                "RunOrder": 1
+              }
+            ]
+          },
+          {
+            "Name": "Logging",
+            "Actions": [
+              {
+                "Name": "Deploy",
+                "InputArtifacts": [
+                  {
+                    "Name": "PipelineSource"
+                  }
+                ],
+                "ActionTypeId": {
+                  "Category": "Build",
+                  "Owner": "AWS",
+                  "Version": "1",
+                  "Provider": "CodeBuild"
+                },
+                "OutputArtifacts": [
+                  {
+                    "Name": "LoggingApplicationOutput"
+                  }
+                ],
+                "Configuration": {
+                  "ProjectName": {
+                    "Ref": "MotherHenPipelineCodeBuildProject"
+                  }
+                },
+                "RunOrder": 1
+              }
+            ]
+          },
+          {
+            "Name": "Pipelines",
+            "Actions": [
+              {
+                "Name": "Deploy",
+                "InputArtifacts": [
+                  {
+                    "Name": "LoggingApplicationOutput"
+                  }
+                ],
+                "ActionTypeId": {
+                  "Category": "Build",
+                  "Owner": "AWS",
+                  "Version": "1",
+                  "Provider": "CodeBuild"
+                },
+                "OutputArtifacts": [
+                  {
+                    "Name": "PipelinesOutput"
+                  }
+                ],
+                "Configuration": {
+                  "ProjectName": {
+                    "Ref": "MotherHenPipelineCodeBuildProject"
+                  }
+                },
+                "RunOrder": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "MotherHenPipelineCodeBuildProject": {
+      "DependsOn": "MotherHenSecretsBucket",
+      "Type": "AWS::CodeBuild::Project",
+      "Properties": {
+        "Name": {
+          "Fn::Join": [
+            "-",
+            [
+              "MotherHenAppBuild",
+              {
+                "Ref": "TaggedVersion"
+              }
+            ]
+          ]
+        },
+        "Description": "Job to create app and security pipelines from source",
+        "EncryptionKey": {
+          "Ref": "MotherHenKey"
+        },
+        "ServiceRole": {
+          "Ref": "CodeBuildServiceRole"
+        },
+        "Artifacts": {
+          "Type": "CODEPIPELINE"
+        },
+        "Environment": {
+          "Type": "LINUX_CONTAINER",
+          "ComputeType": "BUILD_GENERAL1_SMALL",          
+          "Image": {
+	    "Ref": "ServerlessFrameworkEcrImage"
+	  },
+          "EnvironmentVariables": [
+            {
+              "Name": "BUCKET",
+              "Value": {
+                "Ref": "MotherHenSecretsBucket"
+              }
+            },
+            {
+              "Name": "ENV",
+              "Value": {
+                "Ref": "PipelineGitBranch"
+              }
+            },
+            {
+              "Name": "SLS_DEBUG",
+              "Value": "true"
+            },
+            {
+              "Name": "HENVERSION",
+              "Value": {
+                "Ref": "TaggedVersion"
+              }
+            },
+            {
+              "Name": "HENREGION",
+              "Value": {
+                "Ref": "AWS::Region"
+              }
+            }
+          ]
+        },
+        "Source": {
+          "Type": "CODEPIPELINE"
+        },
+        "TimeoutInMinutes": 30
+      }
+    },
+    "CodePipelineServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "codepipeline.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "codebuild.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "PipelineName"
+                  },
+                  "ExecutionPolicy"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:*"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:*",
+                    "iam:PassRole"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction",
+                    "lambda:ListFunctions"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "codebuild:*"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:DescribeLogGroups",
+                    "logs:DescribeLogStreams",
+                    "logs:PutLogEvents",
+                    "logs:GetLogEvents",
+                    "logs:FilterLogEvents"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "CodeBuildServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:iam::",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":root"
+                    ]
+                  ]
+                }
+              },
+              "Action": "sts:AssumeRole"
+            },
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "codebuild.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ]
+      }
+    },
+    "APIGatewayToCloudwatchRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "apigateway.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+        ]
+      }
+    },
+    "MotherHenRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:iam::",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":root"
+                      ]
+                    ]
+                  }
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ]
+      }
+    },
+    "AdminKeyManagerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:iam::",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":root"
+                      ]
+                    ]
+                  }
+                ]
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AWSKeyManagementServicePowerUser"
+        ]
+      }
+    },
+    "MotherHenKey": {
+      "Type": "AWS::KMS::Key",
+      "DependsOn": "AdminKeyManagerRole",
+      "Properties": {
+        "Description": "Key for MotherHens Secrets",
+        "Enabled": true,
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Id": "MotherHenKeyPolicy",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "Allow Root to manage key",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:iam::",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":root"
+                      ]
+                    ]
+                  }
+                ]
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            },
+            {
+              "Sid": "Allow Admin to manage Key",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:iam::",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":role/",
+                        {
+                          "Ref": "AdminKeyManagerRole"
+                        }
+                      ]
+                    ]
+                  }
+                ]
+              },
+              "Action": [
+                "kms:Create*",
+                "kms:Describe*",
+                "kms:Enable*",
+                "kms:List*",
+                "kms:Put*",
+                "kms:Update*",
+                "kms:Revoke*",
+                "kms:Disable*",
+                "kms:Get*",
+                "kms:Delete*",
+                "kms:ScheduleKeyDeletion",
+                "kms:CancelKeyDeletion"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Sid": "Allow Codebuild to access key",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {
+                    "Fn::GetAtt": [
+                      "CodeBuildServiceRole",
+                      "Arn"
+                    ]
+                  }
+                ]
+              },
+              "Action": [
+                "kms:*"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "MotherHenSecretsBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        }
+      }
+    },
+    "SecretsBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "MotherHenSecretsBucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "DenyUnEncryptedObjectUploads",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:PutObject",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "MotherHenSecretsBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "StringNotEquals": {
+                  "s3:x-amz-server-side-encryption": "aws:kms"
+                }
+              }
+            },
+            {
+              "Sid": "DenyInsecureConnections",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:*",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "MotherHenSecretsBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "CodePipelineWorkspaceBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        }
+      }
+    },
+    "S3ArtifactBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "CodePipelineWorkspaceBucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "DenyUnEncryptedObjectUploads",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:PutObject",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "CodePipelineWorkspaceBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "StringNotEquals": {
+                  "s3:x-amz-server-side-encryption": "aws:kms"
+                }
+              }
+            },
+            {
+              "Sid": "DenyInsecureConnections",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "s3:*",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "CodePipelineWorkspaceBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "KmsKeyId": {
+      "Description": "KMS key id used to encrypt Github token",
+      "Value": {
+        "Ref": "MotherHenKey"
+      }
+    },
+    "SecretsBucket": {
+      "Description": "Bucket to store secrets managed by MotherHen",
+      "Value": {
+        "Ref": "MotherHenSecretsBucket"
+      }
+    },
+    "CloudWatchToApiGatewayRole": {
+      "Description": "Role allowing logs to be pushed from API Gateway to CloudWatch",
+      "Value": {
+        "Fn::GetAtt": [
+          "APIGatewayToCloudwatchRole",
+          "Arn"
+        ]
+      }
+    },
+    "ServerlessFrameworkEcrImage": {
+      "Description": "The ECR image identifier for serverless framework",
+      "Value": {
+        "Ref": "ServerlessFrameworkEcrImage"
+      },
+      "Export": {
+        "Name": "ServerlessFrameworkEcrImage"
+      }
+    }
+  }
+}
