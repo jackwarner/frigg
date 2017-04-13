@@ -1,0 +1,9 @@
+{
+  "name": "frigg",
+  "version": "0.0.1",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "console-log-level": "^1.4.0"
+  }
+}
