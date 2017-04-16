@@ -30,6 +30,8 @@ const validEvent = headers => {
 };
 
 const validSignature = (headers, body) => {
+  log.trace('Supplied signature', headers['X-Hub-Signature']);
+  log.trace('Computed signature', signature);
   return headers['X-Hub-Signature'] === signRequestBody(body);
 };
 
@@ -37,6 +39,5 @@ const signRequestBody = body => {
   const signature = crypto.createHmac('sha1', process.env.GITHUB_WEBHOOK_SECRET)
                           .update(JSON.stringify(body), 'utf-8')
                           .digest('hex');
-  log.trace('Computed signature', signature);
   return `sha1=${signature}`;
 };
