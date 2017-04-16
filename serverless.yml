@@ -16,30 +16,36 @@ provider:
 functions:
 
   GitHubEventHandler:
-    handler: github.handler
+    handler: github/event.handler
     events:
       - http:
           path: github
           method: post
           cors: true
 
-  CheckPipelineStatus:
-    handler: handler.hello
-    events:
-      - sns: check-pipeline-status-${opt:stage, self:provider.stage}
+  # CheckPipelineStatus:
+  #   handler: handler.hello
+  #   events:
+  #     - sns: check-pipeline-status-${opt:stage, self:provider.stage}
 
-  UpsertPipeline:
-    handler: handler.hello
+  CreatePipeline:
+    handler: pipelines/create.handler
     events:
-      - sns: upsert-pipeline-${opt:stage, self:provider.stage}
+      - sns: create-pipeline-${opt:stage, self:provider.stage}
 
   RemovePipeline:
-    handler: handler.hello
+    handler: pipelines/remove.handler
     events:
       - sns: remove-pipeline-${opt:stage, self:provider.stage}
 
+  # add this arn to create/update/delete, use it to update status in dynamodb
+  SavePipelineStatus:
+    handler: pipelines/saveStatus.handler
+    events:
+      - sns: save-pipeline-status-${opt:stage, self:provider.stage}
+
 resources:
-  Description: Automated service for creating CodePipelines for applications inside a GitHub organization
+  Description: Automated service for managing CodePipelines for repos & branches inside a GitHub organization
 
   Mappings:
     LogLevel:
@@ -51,3 +57,6 @@ resources:
         level: INFO
       production:
         level: INFO
+  
+  Resources:
+    # DynamoDB table for storing pipeline information - which exist, build status, etc.
