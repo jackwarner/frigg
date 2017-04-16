@@ -10,6 +10,8 @@ Frigg is built with the [Serverless Framework](https://serverless.com/) - see th
 
 To deploy Frigg to your AWS environment simply use your favorite CI/CD tools (this project unironically uses [Travis-CI](https://travis-ci.org/manwaring/odin)) or even deploy manually from your desktop using the command `sls deploy`.
 
+After deploying Frigg you will need to take the endpoint and secret token and use it to register a webhook in your GitHub organization.
+
 # Architecture overview
 
 [travis-badge]: https://travis-ci.org/manwaring/frigg.svg?branch=master		
