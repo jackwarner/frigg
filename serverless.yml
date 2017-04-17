@@ -7,7 +7,11 @@ provider:
   environment:
     LOG_LEVEL:
       Fn::FindInMap: [ LogLevel, '${opt:stage, self:provider.stage}', level ]
-    GITHUB_WEBHOOK_SECRET: poop
+    GITHUB_WEBHOOK_SECRET:
+      Fn::Join:
+        - '-'
+        - - '${opt:stage, self:provider.stage}'
+          - Ref: AWS::AccountId
   iamRole:
     - Effect: Allow
       Resource: '*'
