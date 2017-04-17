@@ -1,4 +1,7 @@
 [![Build Status][travis-badge]][travis-badge-url]
+
+# Frigg is a work in progress!
+
 # Frigg
 Frigg, or Frija, is a Norse goddess who lives in the Fensalir wetlands and is known for her foreknowledge and wisdom.
 
