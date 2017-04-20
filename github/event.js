@@ -6,9 +6,17 @@ class Event {
   }
 
   isValidEvent() {
+    
+  }
+
+  hasValidHeaders() {
 
   }
-  
+
+  hasValidSignature() {
+
+  }
+
 };
 
 module.exports = Event;
