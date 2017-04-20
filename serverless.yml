@@ -20,7 +20,7 @@ provider:
 functions:
 
   GitHubEventHandler:
-    handler: github/event.handler
+    handler: github/webhook.handler
     events:
       - http:
           path: github
