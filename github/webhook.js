@@ -3,11 +3,11 @@ const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const crypto = require('crypto');
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
+const GHEvent = require('./event');
 
 module.exports.handler = (event, context, callback) => {
-  log.info('Received event from GitHub', event);
-  log.trace('Event body is', JSON.parse(event.body));
-  isValidEvent(event)
+  let ghEvent = new GHEvent(event, process.env.GITHUB_WEBHOOK_SECRET);
+  isValidEvent(ghEvent)
     .then(filterEvent)
     .then(sendEvent)
     .then(response => sendSuccess(callback))
@@ -16,18 +16,13 @@ module.exports.handler = (event, context, callback) => {
 
 const isValidEvent = event => {
   return new Promise( (resolve, reject) => {
-    log.trace('Seeing if event is valid');
-    const valid = hasValidHeaders(event.headers) && hasValidSignature(event.headers, event.body);
-    valid ? resolve(event) : reject(new Error('Invalid event'));
+    event.isValid() ? resolve(event) : reject(new Error('Invalid event'));
   });
 };
 
 const filterEvent = event => {
   return new Promise( (resolve, reject) => {
-    const validEvents = ['create', 'delete', 'repository', 'push'];
-    const eventType = event.headers['X-GitHub-Event'];
-    const validAction = validEvents.indexOf(eventType) > -1;
-    validAction ? resolve(event) : resolve({});
+    event.isPertinent() ? resolve(event) : resolve({});
   });
 };
 
@@ -35,22 +30,13 @@ const filterEvent = event => {
 // TODO could be create new pipeline on push, if repo didn't have build spec when first created or any time until this push
 // TODO should this lambda be determining the create vs update, or calling an upsert and deferring to another lambda?
 const sendEvent = event => {
-  const body = JSON.parse(event.body);
-  const eventType = event.headers['X-GitHub-Event'];
-  const createPipeline = eventType === 'repository' && body.action === 'created'
-                      || eventType === 'create';
-  const updatePipeline = eventType === 'push';
-  const removePipeline = eventType === repository && body.action === 'deleted'
-                      || eventType === 'delete';
-  if (createPipeline) {
+  if (event && event.shouldCreatePipeline()) {
     return sendCreatePipelineEvent(body);
-  } else if (updatePipeline) {
+  } else if (event && event.shouldUpdatePipeline()) {
     return sendUpdatePipelineEvent(body);
-  } else if (removePipeline) {
+  } else if (event && event.shouldRemovePipeline()) {
     return sendRemovePipelineEvent(body);
-  } else {
-    throw new Error('Unhandled event type');
-  }
+  } 
 };
 
 const sendCreatePipelineEvent = body => {
