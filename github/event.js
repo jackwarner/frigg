@@ -9,7 +9,8 @@ class GHEvent {
     this.payload = payload;
     this.headers = payload.headers;
     this.event = payload.headers['X-GitHub-Event'];
-    this.body = payload.body;
+    this.rawBody = payload.body;
+    this.body = JSON.parse(payload.body);
     this.action = payload.body.action;
     this.secret = secret;
   }
@@ -62,7 +63,7 @@ class GHEvent {
 
   signRequestBody() {
     const signature = crypto.createHmac('sha1', this.secret)
-                          .update(this.body, 'utf-8')
+                          .update(this.rawBody, 'utf-8')
                           .digest('hex');
     return `sha1=${signature}`;
   }

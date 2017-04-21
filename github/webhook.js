@@ -51,26 +51,29 @@ const sendCreatePipelineEvent = body => {
     }),
     TopicArn: process.env.CREATE_PIPELINE_TOPIC
   };
+  log.trace('Sending create pipeline event with params', params);
   return sns.publish(params).promise();
 };
 
 const sendUpdatePipelineEvent = event => {
   const params = {
     Message: JSON.stringify({
-
+      test: "test"
     }),
     TopicArn: process.env.UPDATE_PIPELINE_TOPIC
   };
+  log.trace('Sending update pipeline event with params', params);
   return sns.publish(params).promise();
 };
 
 const sendRemovePipelineEvent = event => {
   const params = {
     Message: JSON.stringify({
-
+      test: "test"
     }),
     TopicArn: process.env.REMOVE_PIPELINE_TOPIC
   };
+  log.trace('Sending remove pipeline event with params', params);
   return sns.publish(params).promise();
 };
 
