@@ -7,7 +7,7 @@ provider:
   environment:
     LOG_LEVEL:
       Fn::FindInMap: [ LogLevel, '${opt:stage, self:provider.stage}', level ]
-  iamRole:
+  iamRoleStatements:
     - Effect: Allow
       Resource: '*'
       Action: '*'
