@@ -26,16 +26,13 @@ const filterEvent = event => {
   });
 };
 
-// TODO this is getting disgusting, clean up this whole file - how use objects around github events?
-// TODO could be create new pipeline on push, if repo didn't have build spec when first created or any time until this push
-// TODO should this lambda be determining the create vs update, or calling an upsert and deferring to another lambda?
 const sendEvent = event => {
   if (event && event.shouldCreatePipeline()) {
-    return sendCreatePipelineEvent(body);
+    return sendCreatePipelineEvent(event.getBody());
   } else if (event && event.shouldUpdatePipeline()) {
-    return sendUpdatePipelineEvent(body);
+    return sendUpdatePipelineEvent(event.getBody());
   } else if (event && event.shouldRemovePipeline()) {
-    return sendRemovePipelineEvent(body);
+    return sendRemovePipelineEvent(event.getBody());
   } 
 };
 
@@ -75,30 +72,6 @@ const sendRemovePipelineEvent = event => {
     TopicArn: process.env.REMOVE_PIPELINE_TOPIC
   };
   return sns.publish(params).promise();
-};
-
-const hasValidHeaders = headers => {
-  const validHeaders = headers['X-Hub-Signature']
-                    && headers['X-GitHub-Event']
-                    && headers['X-GitHub-Delivery'];
-  log.trace('Has valid headers:', validHeaders);
-  return validHeaders;
-};
-
-const hasValidSignature = (headers, body) => {
-  const signature = signRequestBody(body);
-  log.trace('Supplied signature', headers['X-Hub-Signature']);
-  log.trace('Computed signature', signature);
-  const validSignature = headers['X-Hub-Signature'] === signature;
-  log.trace('Has valid signature', validSignature);
-  return validSignature;
-};
-
-const signRequestBody = body => {
-  const signature = crypto.createHmac('sha1', process.env.GITHUB_WEBHOOK_SECRET)
-                          .update(body, 'utf-8')
-                          .digest('hex');
-  return `sha1=${signature}`;
 };
 
 const sendSuccess = callback => {

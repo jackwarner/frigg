@@ -14,6 +14,10 @@ class GHEvent {
     this.secret = secret;
   }
 
+  getBody() {
+    return this.body;
+  }
+
   isValid() {
     log.trace('Checking to see if event is valid');
     return this.hasValidHeaders() && this.hasValidSignature();
@@ -68,7 +72,7 @@ class GHEvent {
   }
 
   pipelineFileModified() {
-    this.body.commits.find( commit => commit.)
+    // this.body.commits.find( commit => commit.)
   }
 
   pipelineFileRemoved() {
