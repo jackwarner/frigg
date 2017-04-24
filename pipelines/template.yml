@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Standard codepipeline template
+
+Parameters:
+  Repository:
+    Description: Name of the GitHub repository with source code
+    Type: String
+  Branch:
+    Description: Branch of the GitHub repository to pull from
+    Type: String
+  OAuthToken:
+    Description: GitHub personal access token for repository access
+    NoEcho: true
+    Type: String
+
+Resources:
+
+  ArtifactStore:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - NoncurrentVersionExpirationInDays: 30
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Location: { Ref: ArtifactStore }
+        Type: S3

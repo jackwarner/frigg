@@ -5,6 +5,7 @@ provider:
   runtime: nodejs6.10
   stage: local
   environment:
+    GITHUB_TOKEN: ${opt:githubToken}
     LOG_LEVEL:
       Fn::FindInMap: [ LogLevel, '${opt:stage, self:provider.stage}', level ]
   iamRoleStatements:
@@ -24,38 +25,38 @@ functions:
     environment:
       CREATE_PIPELINE_TOPIC: { Ref: 'SNSTopicCreatepipeline${opt:stage, self:provider.stage}' }
       UPDATE_PIPELINE_TOPIC: { Ref: 'SNSTopicUpdatepipeline${opt:stage, self:provider.stage}' }
-      REMOVE_PIPELINE_TOPIC: { Ref: 'SNSTopicRemovepipeline${opt:stage, self:provider.stage}' }
+      # REMOVE_PIPELINE_TOPIC: { Ref: 'SNSTopicSavepipelinestatus${opt:stage, self:provider.stage}' }
       GITHUB_WEBHOOK_SECRET:
         Fn::Join:
           - '-'
           - - '${opt:stage, self:provider.stage}'
             - Ref: AWS::AccountId
 
-  # CheckPipelineStatus:
-  #   handler: handler.hello
-  #   events:
-  #     - sns: check-pipeline-status-${opt:stage, self:provider.stage}
-
   CreatePipeline:
     handler: pipelines/create.handler
     events:
       - sns: create-pipeline-${opt:stage, self:provider.stage}
+    # environment:
+    #   SAVE_PIPELINE_STATUS_TOPIC: { Ref: 'SNSTopicCreatepipeline${opt:stage, self:provider.stage}' }
 
   UpdatePipeline:
     handler: pipelines/update.handler
     events:
       - sns: update-pipeline-${opt:stage, self:provider.stage}
+    # environment:
+    #   SAVE_PIPELINE_STATUS_TOPIC: { Ref: 'SNSTopicCreatepipeline${opt:stage, self:provider.stage}' }
 
   RemovePipeline:
     handler: pipelines/remove.handler
     events:
       - sns: remove-pipeline-${opt:stage, self:provider.stage}
+    # environment:
+    #   SAVE_PIPELINE_STATUS_TOPIC: { Ref: 'SNSTopicCreatepipeline${opt:stage, self:provider.stage}' }
 
-  # add this arn to create/update/delete, use it to update status in dynamodb
-  SavePipelineStatus:
-    handler: pipelines/saveStatus.handler
-    events:
-      - sns: save-pipeline-status-${opt:stage, self:provider.stage}
+  # SavePipelineStatus:
+  #   handler: pipelines/saveStatus.handler
+  #   events:
+  #     - sns: save-pipeline-status-${opt:stage, self:provider.stage}
 
 resources:
   Description: Automated service for managing CodePipelines for repos & branches inside a GitHub organization

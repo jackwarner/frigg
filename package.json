@@ -4,6 +4,7 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "console-log-level": "^1.4.0"
+    "console-log-level": "^1.4.0",
+    "github": "^9.2.0"
   }
 }

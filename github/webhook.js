@@ -42,12 +42,15 @@ const sendCreatePipelineEvent = body => {
       repository: {
         name: body.repository.name,
         qualifiedName: body.repository.full_name,
-        url: body.repository.url,
-        htmlUrl: body.repository.html_url,
+        owner: body.repository.owner.login,
+        api: body.repository.url,
+        html: body.repository.html_url,
         created: body.repository.created_at,
         updated: body.repository.updated_at
-      }
+      },
+      branch: {
 
+      }
     }),
     TopicArn: process.env.CREATE_PIPELINE_TOPIC
   };
