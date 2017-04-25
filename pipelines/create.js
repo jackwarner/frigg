@@ -7,6 +7,7 @@ const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 module.exports.handler = (event, context, callback) => {
   getRepo(getRepoFromEvent(event))
   // createStack(event)
+    .then(logDirectory)
     .then( res => callback(null, res))
     .catch( err => callback(err));
 };
@@ -64,6 +65,22 @@ const getRepo = repository => {
     });
   });
 }
+
+const logDirectory = () => {
+  return new Promise( (resolve, reject) => {
+    const exec = require('child_process').exec;
+    exec('cp -r ./templates /tmp && cd /tmp && ls && node --version && npm i -g serverless', (err, stdout, stderr) => {
+      if (err) {
+        log.error('err', err);
+        reject(err);
+      } else {
+        log.trace('stdout', stdout);
+        log.trace('stderr', stderr);
+        resolve(stdout);
+      }
+    });
+  });
+};
 
 const getRepoFromEvent = event => {
   return JSON.parse(event.Records[0].Sns.Message).repository;
