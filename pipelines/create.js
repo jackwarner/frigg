@@ -5,9 +5,10 @@ const GitHubApi = require('github');
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 
 module.exports.handler = (event, context, callback) => {
-  getRepo(getRepoFromEvent(event))
+  // getRepo(getRepoFromEvent(event))
   // createStack(event)
-    .then(logDirectory)
+    // .then(logDirectory)
+  logDirectory()
     .then( res => callback(null, res))
     .catch( err => callback(err));
 };
@@ -68,17 +69,33 @@ const getRepo = repository => {
 
 const logDirectory = () => {
   return new Promise( (resolve, reject) => {
-    const exec = require('child_process').exec;
-    exec('cp -r ./templates /tmp && cd /tmp && ls && node --version && npm i -g serverless', (err, stdout, stderr) => {
-      if (err) {
-        log.error('err', err);
-        reject(err);
-      } else {
-        log.trace('stdout', stdout);
-        log.trace('stderr', stderr);
-        resolve(stdout);
-      }
-    });
+    require('lambda-git')();
+    // const execSync = require('child_process').execSync;
+    // execSync(`
+    //   mkdir /tmp/git
+    //   tar -C /tmp/git -xf vendor/git-2.4.3.tar
+    // `);
+    setTimeout(() => {
+      const exec = require('child_process').exec;
+      //&& npm i && npm run deploy -- --stage TEST
+      //  && git --version
+      // && export GIT_TEMPLATE_DIR=/tmp/git/usr/share/git-core/templates && export GIT_EXEC_PATH=/tmp/git/usr/libexec/git-core
+      // && export HOME=/tmp
+      // const bash = 'ls && cp -R ./templates /tmp && cd /tmp/templates && ls && node --version && git --version';
+      const bash = 'git --version';
+      // const bash = 'cd /tmp && ls';
+      exec(bash, (err, stdout, stderr) => {
+        if (err) {
+          log.error('err', err);
+          reject(err);
+        } else {
+          log.trace('stdout', stdout);
+          log.trace('stderr', stderr);
+          resolve(stdout);
+        }
+      });
+    }, 3 * 1000);
+    
   });
 };
 

@@ -34,6 +34,7 @@ functions:
 
   CreatePipeline:
     handler: pipelines/create.handler
+    timeout: 300 # 5 minutes
     events:
       - sns: create-pipeline-${opt:stage, self:provider.stage}
     # environment:
