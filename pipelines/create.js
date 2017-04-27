@@ -17,8 +17,9 @@ const deployPipelineForRepository = repo => {
       const dir = `/tmp/${repo.owner}/${repo.name}/master`;
       const cleanDir = `rm -rf ${dir} && mkdir -p ${dir}`;
       const cloneRepo = `git clone -b master --single-branch https://${process.env.GITHUB_TOKEN}@github.com/${repo.owner}/${repo.name}.git`;
+      const setAWSCredentials = `set AWS_ACCESS_KEY=${process.env.AWS_ACCESS_KEY} && set AWS_SECRET_ACCESS_KEY=${process.env.AWS_SECRET_ACCESS_KEY}`;
       const buildPipeline = `cd ${repo.name}/pipeline && npm i && npm run deploy`
-      const bash = `${cleanDir} && cd ${dir} && ${cloneRepo} && ls`;
+      const bash = `${cleanDir} && cd ${dir} && ${cloneRepo} && ${setAWSCredentials} && ${buildPipeline}`;
       console.log('Executing:', bash);
       
       exec(bash, (err, stdout, stderr) => {
