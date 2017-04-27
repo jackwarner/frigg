@@ -4,24 +4,23 @@ const cloudFormation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 
 module.exports.handler = (event, context, callback) => {
-  logDirectory()
+  deployPipelineForRepository(getRepoFromEvent(event))
     .then( res => callback(null, res))
     .catch( err => callback(err));
 };
 
-const logDirectory = () => {
+const deployPipelineForRepository = repo => {
   return new Promise( (resolve, reject) => {
     require('lambda-git')();
     setTimeout(() => {
       const exec = require('child_process').exec;
-      //&& npm i && npm run deploy -- --stage TEST
-      //  && git --version
-      // && export GIT_TEMPLATE_DIR=/tmp/git/usr/share/git-core/templates && export GIT_EXEC_PATH=/tmp/git/usr/libexec/git-core
-      // && export HOME=/tmp
-      // const bash = 'ls && cp -R ./templates /tmp && cd /tmp/templates && ls && node --version && git --version';
-      const bash = 'git --version';
-      // no aws cli installed, will need to get access keys in env. to be able to call serverless deploy
-      // const bash = 'cd /tmp && ls';
+      const dir = `/tmp/${repo.owner}/${repo.name}/master`;
+      const cleanDir = `rm -rf ${dir} && mkdir -p ${dir}`;
+      const cloneRepo = `git clone -b master --single-branch https://${process.env.GITHUB_TOKEN}@github.com/${repo.owner}/${repo.name}.git`;
+      const buildPipeline = `cd ${repo.name}/pipeline && npm i && npm run deploy`
+      const bash = `${cleanDir} && cd ${dir} && ${cloneRepo} && ls`;
+      console.log('Executing:', bash);
+      
       exec(bash, (err, stdout, stderr) => {
         if (err) {
           log.error('err', err);

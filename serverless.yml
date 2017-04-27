@@ -24,8 +24,6 @@ functions:
           cors: true
     environment:
       CREATE_PIPELINE_TOPIC: { Ref: 'SNSTopicCreatepipeline${opt:stage, self:provider.stage}' }
-      UPDATE_PIPELINE_TOPIC: { Ref: 'SNSTopicUpdatepipeline${opt:stage, self:provider.stage}' }
-      # REMOVE_PIPELINE_TOPIC: { Ref: 'SNSTopicSavepipelinestatus${opt:stage, self:provider.stage}' }
       GITHUB_WEBHOOK_SECRET:
         Fn::Join:
           - '-'
@@ -37,27 +35,12 @@ functions:
     timeout: 300 # 5 minutes
     events:
       - sns: create-pipeline-${opt:stage, self:provider.stage}
+    role: AdminDeployRole
+    
     # environment:
-    #   SAVE_PIPELINE_STATUS_TOPIC: { Ref: 'SNSTopicCreatepipeline${opt:stage, self:provider.stage}' }
-
-  UpdatePipeline:
-    handler: pipelines/update.handler
-    events:
-      - sns: update-pipeline-${opt:stage, self:provider.stage}
-    # environment:
-    #   SAVE_PIPELINE_STATUS_TOPIC: { Ref: 'SNSTopicCreatepipeline${opt:stage, self:provider.stage}' }
-
-  RemovePipeline:
-    handler: pipelines/remove.handler
-    events:
-      - sns: remove-pipeline-${opt:stage, self:provider.stage}
-    # environment:
-    #   SAVE_PIPELINE_STATUS_TOPIC: { Ref: 'SNSTopicCreatepipeline${opt:stage, self:provider.stage}' }
-
-  # SavePipelineStatus:
-  #   handler: pipelines/saveStatus.handler
-  #   events:
-  #     - sns: save-pipeline-status-${opt:stage, self:provider.stage}
+      # AWS_ACCESS_KEY_ID: { Ref: DeployUserAccessKey }
+      # AWS_SECRET_ACCESS_KEY:
+      #   Fn::GetAtt: [ DeployUserAccessKey, SecretAccessKey ]
 
 resources:
   Description: Automated service for managing CodePipelines for repos & branches inside a GitHub organization
@@ -75,3 +58,40 @@ resources:
   
   Resources:
     # DynamoDB table for storing pipeline information - which exist, build status, etc.
+
+    AdminDeployRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: FriggAdminDeployAccess-${opt:stage, self:provider.stage}
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement: 
+                - Effect: Allow
+                  Action: '*'
+                  Resource: '*'
+    
+    # DeployUser:
+    #   Type: AWS::IAM::User
+    #   Properties:
+    #     Policies:
+    #       - PolicyName: FriggAdminDeployAccess-${opt:stage, self:provider.stage}
+    #         PolicyDocument:
+    #           Version: '2012-10-17'
+    #           Statement: 
+    #             - Effect: Allow
+    #               Action: '*'
+    #               Resource: '*'            
+    
+    # DeployUserAccessKey:
+    #   Type: AWS::IAM::AccessKey
+    #   Properties:
+    #     UserName: { Ref: DeployUser }
