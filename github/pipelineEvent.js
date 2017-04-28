@@ -11,13 +11,41 @@ class PipelineEvent {
   }
 
   send() {
-    if (this.shouldCreatePipeline()) {
-      return this.sendCreateEvent();
-    } else if (this.shouldUpdatePipeline()) {
-      return this.sendUpdateEvent();
+    const body = this.body;
+    const params = {
+      Message: JSON.stringify({
+        repository: {
+          name: body.repository.name,
+          qualifiedName: body.repository.full_name,
+          owner: body.repository.owner.login,
+          api: body.repository.url,
+          html: body.repository.html_url,
+          created: body.repository.created_at,
+          updated: body.repository.updated_at
+        },
+        branch: {
+
+        },
+        modification: this.getModification()
+      }),
+      TopicArn: process.env.CREATE_PIPELINE_TOPIC
+    };
+    log.trace('Sending create pipeline event with params', params);
+    return sns.publish(params).promise();
+  }
+
+  getModification() {
+    if (this.shouldUpsertPipeline()) {
+      return 'UPSERT';
     } else if (this.shouldRemovePipeline()) {
-      return this.sendRemoveEvent();
-    } 
+      return 'REMOVE';
+    } else {
+      return 'MY_BAD';
+    }
+  }
+
+  shouldUpsertPipeline() {
+    return this.shouldCreatePipeline() || this.shouldUpdatePipeline();
   }
 
   shouldCreatePipeline() {
@@ -50,48 +78,6 @@ class PipelineEvent {
   }
   
   sendCreateEvent() {
-    const body = this.body;
-    const params = {
-      Message: JSON.stringify({
-        repository: {
-          name: body.repository.name,
-          qualifiedName: body.repository.full_name,
-          owner: body.repository.owner.login,
-          api: body.repository.url,
-          html: body.repository.html_url,
-          created: body.repository.created_at,
-          updated: body.repository.updated_at
-        },
-        branch: {
-
-        }
-      }),
-      TopicArn: process.env.CREATE_PIPELINE_TOPIC
-    };
-    log.trace('Sending create pipeline event with params', params);
-    return sns.publish(params).promise();
-  };
-
-  sendUpdateEvent() {
-    const params = {
-      Message: JSON.stringify({
-        test: "test"
-      }),
-      TopicArn: process.env.UPDATE_PIPELINE_TOPIC
-    };
-    log.trace('Sending update pipeline event with params', params);
-    return sns.publish(params).promise();
-  };
-
-  sendRemoveEvent() {
-    const params = {
-      Message: JSON.stringify({
-        test: "test"
-      }),
-      TopicArn: process.env.REMOVE_PIPELINE_TOPIC
-    };
-    log.trace('Sending remove pipeline event with params', params);
-    return sns.publish(params).promise();
   };
 
 };

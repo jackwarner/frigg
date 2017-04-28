@@ -10,8 +10,15 @@ provider:
       Fn::FindInMap: [ LogLevel, '${opt:stage, self:provider.stage}', level ]
   iamRoleStatements:
     - Effect: Allow
-      Resource: '*'
-      Action: '*'
+      Action:
+        - sns:Publish
+      Resource:
+        Fn::Join:
+          - ':'
+          - - 'arn:aws:sns'
+            - Ref: AWS::Region
+            - Ref: AWS::AccountId
+            - '*'
 
 functions:
 
@@ -23,7 +30,7 @@ functions:
           method: post
           cors: true
     environment:
-      CREATE_PIPELINE_TOPIC: { Ref: 'SNSTopicCreatepipeline${opt:stage, self:provider.stage}' }
+      CREATE_PIPELINE_TOPIC: { Ref: 'SNSTopicModifypipeline${opt:stage, self:provider.stage}' }
       GITHUB_WEBHOOK_SECRET:
         Fn::Join:
           - '-'
@@ -31,11 +38,11 @@ functions:
             - Ref: AWS::AccountId
 
   # TODO change function to handle removing pipelines as well based on params
-  CreatePipeline:
-    handler: pipelines/create.handler
+  ModifyPipeline:
+    handler: pipelines/modify.handler
     timeout: 300 # 5 minutes
     events:
-      - sns: create-pipeline-${opt:stage, self:provider.stage}
+      - sns: modify-pipeline-${opt:stage, self:provider.stage}
     # Admin role needed for deploying serverless applications
     role: AdminDeployRole
 

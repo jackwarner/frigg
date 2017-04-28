@@ -1,11 +1,8 @@
 'use strict';
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
+const exec = require('child_process').exec;
 
 class Bash {
-
-  constructor() {
-    this.exec = require('child_process').exec;
-  }
 
   execute(command) {
     return new Promise((resolve, reject) => {
