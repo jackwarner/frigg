@@ -30,17 +30,14 @@ functions:
           - - '${opt:stage, self:provider.stage}'
             - Ref: AWS::AccountId
 
+  # TODO change function to handle removing pipelines as well based on params
   CreatePipeline:
     handler: pipelines/create.handler
     timeout: 300 # 5 minutes
     events:
       - sns: create-pipeline-${opt:stage, self:provider.stage}
+    # Admin role needed for deploying serverless applications
     role: AdminDeployRole
-    
-    # environment:
-      # AWS_ACCESS_KEY_ID: { Ref: DeployUserAccessKey }
-      # AWS_SECRET_ACCESS_KEY:
-      #   Fn::GetAtt: [ DeployUserAccessKey, SecretAccessKey ]
 
 resources:
   Description: Automated service for managing CodePipelines for repos & branches inside a GitHub organization
@@ -57,7 +54,7 @@ resources:
         level: INFO
   
   Resources:
-    # DynamoDB table for storing pipeline information - which exist, build status, etc.
+    # TODO DynamoDB table for storing pipeline information - which exist, build status, etc.
 
     AdminDeployRole:
       Type: AWS::IAM::Role
@@ -78,20 +75,3 @@ resources:
                 - Effect: Allow
                   Action: '*'
                   Resource: '*'
-    
-    # DeployUser:
-    #   Type: AWS::IAM::User
-    #   Properties:
-    #     Policies:
-    #       - PolicyName: FriggAdminDeployAccess-${opt:stage, self:provider.stage}
-    #         PolicyDocument:
-    #           Version: '2012-10-17'
-    #           Statement: 
-    #             - Effect: Allow
-    #               Action: '*'
-    #               Resource: '*'            
-    
-    # DeployUserAccessKey:
-    #   Type: AWS::IAM::AccessKey
-    #   Properties:
-    #     UserName: { Ref: DeployUser }
