@@ -14,21 +14,15 @@ class PipelineEvent {
     const body = this.body;
     const params = {
       Message: JSON.stringify({
-        repository: {
-          name: body.repository.name,
-          qualifiedName: body.repository.full_name,
-          owner: body.repository.owner.login,
-          api: body.repository.url,
-          html: body.repository.html_url,
-          created: body.repository.created_at,
-          updated: body.repository.updated_at
-        },
-        branch: {
-
-        },
+        name: body.repository.name,
+        qualifiedName: body.repository.full_name,
+        owner: body.repository.owner.login,
+        created: body.repository.created_at,
+        updated: body.repository.updated_at,
+        branch: this.getBranch(),
         modification: this.getModification()
       }),
-      TopicArn: process.env.CREATE_PIPELINE_TOPIC
+      TopicArn: process.env.MODIFY_PIPELINE_TOPIC
     };
     log.trace('Sending create pipeline event with params', params);
     return sns.publish(params).promise();
@@ -44,6 +38,10 @@ class PipelineEvent {
     }
   }
 
+  getBranch() {
+    return this.body.ref.substr(this.body.ref.lastIndexOf('/') + 1);
+  }
+
   shouldUpsertPipeline() {
     return this.shouldCreatePipeline() || this.shouldUpdatePipeline();
   }
@@ -51,7 +49,7 @@ class PipelineEvent {
   shouldCreatePipeline() {
     return (this.event === 'repository' && this.action === 'created')
           || this.event === 'create'
-          || this.pipelineFileAdded();
+          //|| this.pipelineFileAdded();
   }
 
   shouldUpdatePipeline() {
@@ -61,7 +59,7 @@ class PipelineEvent {
   shouldRemovePipeline() {
     return (this.event === 'repository' && this.action === 'deleted')
           || this.event === 'delete'
-          || this.pipelineFileRemoved();
+          //|| this.pipelineFileRemoved();
   }
 
   pipelineFileAdded() {

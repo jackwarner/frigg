@@ -7,7 +7,7 @@ class Bash {
   execute(command) {
     return new Promise((resolve, reject) => {
       log.trace('Running bash command', command)
-      this.exec(command, (err, stdout, stderr) => {
+      exec(command, (err, stdout, stderr) => {
         if (err) {
           log.error('Error running bash command', err);
           reject(err);

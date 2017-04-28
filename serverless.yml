@@ -30,7 +30,7 @@ functions:
           method: post
           cors: true
     environment:
-      CREATE_PIPELINE_TOPIC: { Ref: 'SNSTopicModifypipeline${opt:stage, self:provider.stage}' }
+      MODIFY_PIPELINE_TOPIC: { Ref: 'SNSTopicModifypipeline${opt:stage, self:provider.stage}' }
       GITHUB_WEBHOOK_SECRET:
         Fn::Join:
           - '-'

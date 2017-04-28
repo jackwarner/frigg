@@ -16,5 +16,5 @@ module.exports.handler = (event, context, callback) => {
 };
 
 const getRepoFromEvent = event => {
-  return JSON.parse(event.Records[0].Sns.Message).repository;
+  return JSON.parse(event.Records[0].Sns.Message);
 };

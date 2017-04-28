@@ -6,7 +6,7 @@ class Deployer {
 
   constructor(repo) {
     this.directory = `/tmp/repo/${repo.name}`;
-    this.command = repo.modification && repo.modification.toUperCase() === 'UPSERT' ? 'deploy' : 'remove';
+    this.command = repo.modification && repo.modification.toUpperCase() === 'UPSERT' ? 'deploy' : 'remove';
     this.AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
     this.AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
     this.bash = new Bash();
@@ -17,16 +17,6 @@ class Deployer {
     let command = `cd ${this.directory} && export AWS_ACCESS_KEY_ID=${this.AWS_ACCESS_KEY_ID} && export AWS_SECRET_ACCESS_KEY=${this.AWS_SECRET_ACCESS_KEY} && export HOME=/tmp`;
     command += ` && cd ${this.directory}/pipeline && npm i && npm run ${this.command}`;
     return this.bash.execute(command);
-  }
-
-  setupDeployEnvironment() {
-    log.trace('Setting up deploy environment');
-    const command = ``;
-    return this.bash.execute(command);
-  }
-
-  doDeploy() {
-    log.trace('Deploying pipeline');
   }
 
 };

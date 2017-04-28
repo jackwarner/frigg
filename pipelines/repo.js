@@ -9,7 +9,7 @@ const Deployer = require('./deployer');
 class Repo {
   constructor(repo) {
     this.directory = '/tmp/repo';
-    this.branch = 'master';
+    this.branch = repo.branch;
     this.owner = repo.owner;
     this.name = repo.name;
     this.token = process.env.GITHUB_TOKEN;
