@@ -11,6 +11,8 @@ This serverless application receives GitHub organization events and manages Code
 # How to use it
 Frigg is built with the [Serverless Framework](https://serverless.com/) - see their documentation for more about the tool and how to use it.
 
+Currently a GitHub token needs to be supplied as a command line argument when deploying the application - in the future this will be managed with [AWS Parameter Store](https://github.com/manwaring/frigg/issues/9).
+
 After deploying Frigg you will need to take the endpoint and secret token and use it to register a webhook in your GitHub organization.
 
 # Architecture overview
