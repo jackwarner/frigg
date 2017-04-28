@@ -30,19 +30,19 @@ functions:
           method: post
           cors: true
     environment:
-      MODIFY_PIPELINE_TOPIC: { Ref: 'SNSTopicModifypipeline${opt:stage, self:provider.stage}' }
+      UPSERT_PIPELINE_TOPIC: { Ref: 'SNSTopicUpsertpipeline${opt:stage, self:provider.stage}' }
+      REMOVE_PIPELINE_TOPIC: ''
       GITHUB_WEBHOOK_SECRET:
         Fn::Join:
           - '-'
           - - '${opt:stage, self:provider.stage}'
             - Ref: AWS::AccountId
 
-  # TODO change function to handle removing pipelines as well based on params
-  ModifyPipeline:
+  UpsertPipeline:
     handler: pipelines/modify.handler
     timeout: 300 # 5 minutes
     events:
-      - sns: modify-pipeline-${opt:stage, self:provider.stage}
+      - sns: upsert-pipeline-${opt:stage, self:provider.stage}
     # Admin role needed for deploying serverless applications
     role: AdminDeployRole
 

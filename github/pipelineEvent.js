@@ -8,6 +8,8 @@ class PipelineEvent {
     this.event = event;
     this.action = action;
     this.body = body;
+    this.upsertTopic = process.env.UPSERT_PIPELINE_TOPIC;
+    this.removeTopic = process.env.REMOVE_PIPELINE_TOPIC;
   }
 
   send() {
@@ -22,7 +24,7 @@ class PipelineEvent {
         branch: this.getBranch(),
         modification: this.getModification()
       }),
-      TopicArn: process.env.MODIFY_PIPELINE_TOPIC
+      TopicArn: this.getTopic()
     };
     log.trace('Sending create pipeline event with params', params);
     return sns.publish(params).promise();
@@ -40,6 +42,10 @@ class PipelineEvent {
 
   getBranch() {
     return this.body.ref.substr(this.body.ref.lastIndexOf('/') + 1);
+  }
+
+  getTopic() {
+    return this.getModification() === 'UPSERT' ? this.upsertTopic : this.removeTopic;
   }
 
   shouldUpsertPipeline() {
