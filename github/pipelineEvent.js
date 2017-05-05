@@ -8,8 +8,6 @@ class PipelineEvent {
     this.event = event;
     this.action = action;
     this.body = body;
-    this.upsertTopic = process.env.UPSERT_PIPELINE_TOPIC;
-    this.removeTopic = process.env.REMOVE_PIPELINE_TOPIC;
   }
 
   send() {
@@ -21,8 +19,7 @@ class PipelineEvent {
         owner: body.repository.owner.login,
         created: body.repository.created_at,
         updated: body.repository.updated_at,
-        branch: this.getBranch(),
-        modification: this.getModification()
+        branch: this.getBranch()
       }),
       TopicArn: this.getTopic()
     };
@@ -30,22 +27,18 @@ class PipelineEvent {
     return sns.publish(params).promise();
   }
 
-  getModification() {
-    if (this.shouldUpsertPipeline()) {
-      return 'UPSERT';
-    } else if (this.shouldRemovePipeline()) {
-      return 'REMOVE';
-    } else {
-      return 'MY_BAD';
-    }
-  }
-
   getBranch() {
     return this.body.ref.substr(this.body.ref.lastIndexOf('/') + 1);
   }
 
   getTopic() {
-    return this.getModification() === 'UPSERT' ? this.upsertTopic : this.removeTopic;
+    if (this.shouldUpsertPipeline()) {
+      return process.env.UPSERT_PIPELINE_TOPIC;
+    } else if (this.shouldRemovePipeline()) {
+      return process.env.REMOVE_PIPELINE_TOPIC;
+    } else {
+      return 'MY_BAD';
+    }
   }
 
   shouldUpsertPipeline() {

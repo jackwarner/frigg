@@ -31,7 +31,7 @@ functions:
           cors: true
     environment:
       UPSERT_PIPELINE_TOPIC: { Ref: 'SNSTopicUpsertpipeline${opt:stage, self:provider.stage}' }
-      REMOVE_PIPELINE_TOPIC: ''
+      REMOVE_PIPELINE_TOPIC: { Ref: 'SNSTopicRemovepipeline${opt:stage, self:provider.stage}' }
       GITHUB_WEBHOOK_SECRET:
         Fn::Join:
           - '-'
@@ -44,6 +44,13 @@ functions:
     events:
       - sns: upsert-pipeline-${opt:stage, self:provider.stage}
     # Admin role needed for deploying serverless applications
+    role: AdminDeployRole
+
+  RemovePipeline:
+    handler: pipelines/remove.handler
+    events:
+      - sns: remove-pipeline-${opt:stage, self:provider.stage}
+    # Admin role needed for removing serverless applications
     role: AdminDeployRole
 
 resources:
