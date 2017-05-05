@@ -10,20 +10,16 @@ class Stack {
     this.name = repo.name;
   }
 
-  remove() {
-
-  }
-
-  getStack() {
-    // return cloudFormation.
-  }
-
-  getBucketsToEmpty() {
-
-  }
-
-  emptyBuckets() {
-
+  markForDeletion() {
+    const params = {
+      StackName: `${this.name}-pipeline-${this.branch}-local`,
+      Tags: [{
+        Key: 'DELETE',
+        Value: 'ODIN'
+      }]
+    };
+    log.trace('Updating stack with params', params);
+    return cloudFormation.updateStack(params).promise();
   }
 
 };
