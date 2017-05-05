@@ -6,7 +6,7 @@ class Deployer {
 
   constructor(repo) {
     this.directory = `/tmp/repo/${repo.name}`;
-    this.command = repo.modification && repo.modification.toUpperCase() === 'UPSERT' ? 'deploy' : 'remove';
+    this.command = 'deploy';
     this.AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
     this.AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
     this.bash = new Bash();
