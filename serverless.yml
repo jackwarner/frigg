@@ -39,7 +39,7 @@ functions:
             - Ref: AWS::AccountId
 
   UpsertPipeline:
-    handler: pipelines/modify.handler
+    handler: pipelines/upsert.handler
     timeout: 300 # 5 minutes
     events:
       - sns: upsert-pipeline-${opt:stage, self:provider.stage}
