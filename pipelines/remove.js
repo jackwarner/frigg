@@ -6,7 +6,7 @@ const Stack = require('./stack');
 
 module.exports.handler = (event, context, callback) => {
   const stack = new Stack(getRepoFromEvent(event));
-  stack.markForDeletion()
+  stack.remove()
     .then(res => callback(null, res))
     .catch(err => callback(err));
 };

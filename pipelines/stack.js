@@ -10,16 +10,39 @@ class Stack {
     this.name = repo.name;
   }
 
-  markForDeletion() {
+  remove() {
+    return this.getStack()
+              // TODO be more defensive about return object
+              .then(stack => this.emptyBuckets(stack.data.Stacks[0]))
+              .then(stack => this.doRemove(stack))
+              .then(res => callback(null, 'Successfully removed stack'))
+              .then(err => callback(err));
+  }
+
+  getStack() {
     const params = {
-      StackName: `${this.name}-pipeline-${this.branch}-local`,
-      Tags: [{
-        Key: 'DELETE',
-        Value: 'ODIN'
-      }]
+      StackName: 'frigg-pipeline-test-local'
     };
-    log.trace('Updating stack with params', params);
-    return cloudFormation.updateStack(params).promise();
+    log.trace('Getting stack with params', params);
+    return cloudFormation.describeStacks(params).promise();
+  }
+
+  emptyBuckets(stack) {
+    let bucketsToEmpty = [];
+    if (stack.Outputs && stack.Outputs.length > 0) {
+      bucketsToEmpty = stack.Outputs
+        .filter(output => ['ServerlessDeploymentBucketName'].indexOf(output.OutputKey) > -1)
+        .map(output => output.OutputValue);
+    }
+    bucketsToEmpty.map(bucket => this.emptyBuckets(bucket));
+  }
+
+  emptyBucket(bucket) {
+    
+  }
+
+  doRemove(stack) {
+
   }
 
 };

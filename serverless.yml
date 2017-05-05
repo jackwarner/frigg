@@ -89,3 +89,20 @@ resources:
                 - Effect: Allow
                   Action: '*'
                   Resource: '*'
+    
+    PipelinesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: owner
+            AttributeType: S
+          - AttributeName: repo-branch
+            AttributeType: S
+        KeySchema:
+          - AttributeName: owner
+            AttributeType: HASH
+          - AttributeName: repo-branch
+            AttributeType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
