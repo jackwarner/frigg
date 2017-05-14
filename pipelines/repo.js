@@ -40,7 +40,7 @@ class Repo {
 
   publishStackName(deployOutput) {
     log.trace('Received output from stack deploy', deployOutput);
-    const command = `$(grep -Po "(?<=^service ).*" ${deployOutput}`;
+    const command = `echo ${deployOutput} | sed -e 's/.*service:\(.*\)stage.*/\1/'`;
     return this.bash.execute(command);
   }
 
