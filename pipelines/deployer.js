@@ -1,6 +1,6 @@
 'use strict';
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
-const Bash = require('./bash');
+const Bash = require('../lib/bash');
 
 class Deployer {
 

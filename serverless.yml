@@ -100,9 +100,9 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: owner
-            AttributeType: HASH
+            KeyType: HASH
           - AttributeName: repo-branch
-            AttributeType: RANGE
+            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

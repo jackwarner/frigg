@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const tar = require('tar-fs');
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
-const Bash = require('./bash');
+const Bash = require('../lib/bash');
 const Deployer = require('./deployer');
 
 class Repo {
@@ -36,6 +36,12 @@ class Repo {
 
   deploy() {
     return this.deployer.deploy();
+  }
+
+  publishStackName(deployOutput) {
+    log.trace('Received output from stack deploy', deployOutput);
+    const command = `$(grep -Po "(?<=^service ).*" ${deployOutput}`;
+    return this.bash.execute(command);
   }
 
 };
