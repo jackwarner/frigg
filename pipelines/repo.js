@@ -77,8 +77,8 @@ class Repo {
     const command = `x=$'${stackInfo}'
 readarray -t y <<<"$x"
 
-servicekeyvalue=\${y[4]}
-stagekeyvalue=\${y[5]}
+servicekeyvalue=\${y[5]}
+stagekeyvalue=\${y[6]}
 
 IFS=': ' read -r -a servicearray <<< "$servicekeyvalue"
 IFS=': ' read -r -a stagearray <<< "$stagekeyvalue"
