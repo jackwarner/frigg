@@ -39,51 +39,7 @@ class Repo {
   }
 
   publishStackName(deployOutput) {
-    return this.getStackInfo()
-                .then(res => this.getStackName(res));
-//     log.trace('Received output from stack deploy', deployOutput);
-
-//     const command = `x=$'Service Information
-// service: frigg
-// stage: local
-// region: us-east-1
-// api keys:
-//   None
-// endpoints:
-//   POST - https://dcjwa5u3rk.execute-api.us-east-1.amazonaws.com/local/github
-// functions:
-//   GitHubEventHandler: frigg-local-GitHubEventHandler
-//   UpsertPipeline: frigg-local-UpsertPipeline
-//   RemovePipeline: frigg-local-RemovePipeline'
-// readarray -t y <<<"$x"
-
-// servicekeyvalue=\${y[1]}
-// stagekeyvalue=\${y[2]}
-
-// IFS=': ' read -r -a servicearray <<< "$servicekeyvalue"
-// IFS=': ' read -r -a stagearray <<< "$stagekeyvalue"
-
-// echo "\${servicearray[1]}"-"\${stagearray[1]}"`;
-//     return this.bash.execute(command);
-  }
-
-  getStackInfo() {
-    const command = `cd /tmp/repo/${this.name} $$ export HOME=/tmp && export STAGE=${this.branch} && cd pipeline && npm run info`;
-    return this.bash.execute(command);
-  }
-
-  getStackName(stackInfo) {
-    log.trace('Received stack info', stackInfo);
-    const command = `x=$'${stackInfo}'
-readarray -t y <<<"$x"
-
-servicekeyvalue=\${y[5]}
-stagekeyvalue=\${y[6]}
-
-IFS=': ' read -r -a servicearray <<< "$servicekeyvalue"
-IFS=': ' read -r -a stagearray <<< "$stagekeyvalue"
-
-echo "\${servicearray[1]}"-"\${stagearray[1]}"`;
+    const command = `cd /tmp/repo/${this.name} $$ export HOME=/tmp && export STAGE=${this.branch} && cd pipeline && npm run servicename`;
     return this.bash.execute(command);
   }
 
