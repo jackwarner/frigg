@@ -7,9 +7,7 @@
     "serverless": "^1.14.0"
   },
   "scripts": {
-    "test": "serverless deploy",
-    "build": "serverless deploy",
-    "deploy": "serverless deploy"
+    "deploy": "serverless deploy --stage $STAGE"
   },
   "repository": {
     "type": "git",
