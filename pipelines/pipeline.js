@@ -2,10 +2,10 @@
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 const Bash = require('../lib/bash');
 
-class Deployer {
+class Pipeline {
 
   constructor(repo) {
-    this.templateDirectory = `pipelines/templates/standardv1`;
+    this.templateDirectory = `pipelines/templates/${repo.pipeline.name}/v${repo.pipeline.version}`;
     this.tempDirectory = `/tmp/pipeline`
     this.branch = repo.branch;
     this.command = 'deploy';
@@ -24,4 +24,4 @@ class Deployer {
 
 };
 
-module.exports = Deployer;
+module.exports = Pipeline;

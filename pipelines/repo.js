@@ -4,7 +4,6 @@ const path = require('path');
 const tar = require('tar-fs');
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 const Bash = require('../lib/bash');
-const Deployer = require('./deployer');
 const yaml = require('js-yaml');
 
 class Repo {
@@ -15,7 +14,7 @@ class Repo {
     this.name = repo.name;
     this.token = process.env.GITHUB_TOKEN;
     this.bash = new Bash();
-    this.deployer = new Deployer(repo);
+    this.pipeline = {};
   }
 
   clone() {
@@ -39,12 +38,8 @@ class Repo {
   setFriggProperties() {
     log.trace('Getting Frigg properties');
     let config = yaml.safeLoad(fs.readFileSync(`${this.directory}/${this.name}/frigg.yml`, 'utf8'));
-    log.trace('Frigg properties are', config);
+    this.pipeline = config.pipeline;
     return Promise.resolve(config);
-  }
-
-  deploy() {
-    return this.deployer.deploy();
   }
 
 };
