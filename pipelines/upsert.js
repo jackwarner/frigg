@@ -11,8 +11,6 @@ module.exports.handler = (event, context, callback) => {
   git.install()
     .then(res => repo.clone())
     .then(res => repo.deploy())
-    .then(res => repo.publishStackName(res))
-    .then(res => console.log('Response from stack name', res))
     .then(res => callback(null, res))
     .catch(err => callback(err));
 };

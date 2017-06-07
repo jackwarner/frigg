@@ -1,0 +1,10 @@
+service: frigg-pipeline-test
+
+provider:
+  name: aws
+  stage: local
+  runtime: nodejs6.10
+
+functions:
+  hello:
+    handler: handler.hello

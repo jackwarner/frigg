@@ -1,0 +1,24 @@
+{
+  "name": "frigg-pipeline-standard-v1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "dependencies": {
+    "serverless": "^1.14.0"
+  },
+  "scripts": {
+    "test": "serverless deploy",
+    "build": "serverless deploy",
+    "deploy": "serverless deploy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/santaswap/test.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/santaswap/test/issues"
+  },
+  "homepage": "https://github.com/santaswap/test#readme"
+}

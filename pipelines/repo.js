@@ -5,6 +5,7 @@ const tar = require('tar-fs');
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 const Bash = require('../lib/bash');
 const Deployer = require('./deployer');
+const yaml = require('js-yaml');
 
 class Repo {
   constructor(repo) {
@@ -19,7 +20,8 @@ class Repo {
 
   clone() {
     return this.cleanDirectory()
-              .then(() => this.doClone());
+              .then(() => this.doClone())
+              .then(() => this.setFriggProperties());
   }
 
   cleanDirectory() {
@@ -34,13 +36,15 @@ class Repo {
     return this.bash.execute(command);
   }
 
-  deploy() {
-    return this.deployer.deploy();
+  setFriggProperties() {
+    log.trace('Getting Frigg properties');
+    let config = yaml.safeLoad(fs.readFileSync(`${this.directory}/${this.name}/frigg.yml`, 'utf8'));
+    log.trace('Frigg properties are', config);
+    return Promise.resolve(config);
   }
 
-  publishStackName(deployOutput) {
-    const command = `cd /tmp/repo/${this.name} $$ export HOME=/tmp && export STAGE=${this.branch} && cd pipeline && npm run servicename`;
-    return this.bash.execute(command);
+  deploy() {
+    return this.deployer.deploy();
   }
 
 };
