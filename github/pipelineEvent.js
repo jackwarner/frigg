@@ -27,6 +27,7 @@ class PipelineEvent {
     return sns.publish(params).promise();
   }
 
+  // TODO there is no branch for a deleted repository message
   getBranch() {
     return this.body.ref.substr(this.body.ref.lastIndexOf('/') + 1);
   }
