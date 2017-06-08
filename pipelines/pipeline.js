@@ -7,7 +7,7 @@ const Bash = require('../lib/bash');
 class Pipeline {
 
   constructor(repo) {
-    this.pipelineServiceName = `${repo.name}-pipeline-${repo.branch}`;
+    this.pipelineServiceName = `${repo.name}-pipeline`;
     this.stage = repo.branch;
     this.templateDirectory = `pipelines/templates/${repo.pipeline.name}/v${repo.pipeline.version}`;
     this.tempDirectory = `/tmp/pipeline`;
