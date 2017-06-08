@@ -1,4 +1,4 @@
-service: frigg-pipeline-test
+service: ${env:REPO}-pipeline
 
 provider:
   name: aws
