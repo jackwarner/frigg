@@ -50,6 +50,8 @@ functions:
     handler: pipelines/remove.handler
     events:
       - sns: remove-pipeline-${opt:stage, self:provider.stage}
+    environment:
+      ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
     # Admin role needed for removing serverless applications
     role: AdminDeployRole
 

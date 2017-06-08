@@ -1,4 +1,4 @@
-service: ${env:REPO}-pipeline
+service: ${env:PIPELINE_SERVICE_NAME}
 
 provider:
   name: aws
