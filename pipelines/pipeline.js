@@ -7,8 +7,9 @@ const Bash = require('../lib/bash');
 class Pipeline {
 
   constructor(repo) {
-    this.pipelineServiceName = `${repo.name}-pipeline`;
-    this.stage = repo.branch;
+    log.trace('Creating pipeline class for repo', repo);
+    this.pipelineServiceName = this.getPipelineServiceName(repo.name);
+    this.stage = this.getStage(repo.branch);
     this.templateDirectory = `pipelines/templates/${repo.pipeline.name}/v${repo.pipeline.version}`;
     this.tempDirectory = `/tmp/pipeline`;
     this.AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
@@ -32,7 +33,16 @@ class Pipeline {
       }),
       TopicArn: process.env.ODIN_REMOVE_STACK_TOPIC
     };
+    log.trace('Sending remove pipeline request with params', params);
     return sns.publish(params).promise();
+  }
+
+  getPipelineServiceName(repo) {
+    return `${repo}-pipeline`;
+  }
+
+  getStage(branch) {
+    return branch.toUpperCase() === 'MASTER' ? 'prod' : branch;
   }
 
 };

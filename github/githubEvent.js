@@ -7,10 +7,11 @@ const PipelineEvent = require('./pipelineEvent');
 
 class GHEvent {
   constructor(payload, secret) {
+    const body = JSON.parse(payload.body);
     log.trace('Instantiating event from payload', payload);
     this.event = payload.headers['X-GitHub-Event'];
     this.auth = new GHAuth(payload.headers, payload.body, process.env.GITHUB_WEBHOOK_SECRET);
-    this.pipelineEvent = new PipelineEvent(payload.headers['X-GitHub-Event'], payload.body.action, JSON.parse(payload.body));
+    this.pipelineEvent = new PipelineEvent(payload.headers['X-GitHub-Event'], body.action, body);
   }
 
   isValid() {
