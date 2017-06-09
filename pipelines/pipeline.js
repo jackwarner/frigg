@@ -28,8 +28,7 @@ class Pipeline {
     log.trace('Removing pipeline');
     const params = {
       Message: JSON.stringify({
-        stack: `${this.pipelineServiceName}-${this.stage}`,
-        bucketsToEmpty: []
+        stack: `${this.pipelineServiceName}-${this.stage}`
       }),
       TopicArn: process.env.ODIN_REMOVE_STACK_TOPIC
     };

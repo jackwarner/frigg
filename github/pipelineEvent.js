@@ -5,6 +5,7 @@ const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 
 class PipelineEvent {
   constructor(event, action, body) {
+    log.trace(`Creating pipeline event with params event=${event}, action=${action}, body=${body}`);
     this.event = event;
     this.action = action;
     this.body = body;
@@ -23,14 +24,14 @@ class PipelineEvent {
       }),
       TopicArn: this.getTopic()
     };
-    log.trace('Sending create pipeline event with params', params);
+    log.trace('Sending pipeline event with params', params);
     return sns.publish(params).promise();
   }
 
   // TODO there is no branch for a deleted repository message
   // TODO there is also no branch for a new repository message
   getBranch() {
-    return this.body.ref.substr(this.body.ref.lastIndexOf('/') + 1);
+    return this.body.ref ? this.body.ref.substr(this.body.ref.lastIndexOf('/') + 1) : '';
   }
 
   getTopic() {
@@ -48,19 +49,26 @@ class PipelineEvent {
   }
 
   shouldCreatePipeline() {
-    return (this.event === 'repository' && this.action === 'created')
+    const shouldCreate = (this.event === 'repository' && this.action === 'created')
           || this.event === 'create'
           //|| this.pipelineFileAdded();
+    log.trace('should create: ', shouldCreate);
+    return shouldCreate;
   }
 
   shouldUpdatePipeline() {
-    return this.event === 'push' && this.pipelineFileModified();
+    const shouldUpdate = this.event === 'push' && this.pipelineFileModified();
+    log.trace('should update', shouldUpdate);
+    return shouldUpdate;
   }
 
   shouldRemovePipeline() {
-    return (this.event === 'repository' && this.action === 'deleted')
+    const shouldRemove = (this.event === 'repository' && this.action === 'deleted')
           || this.event === 'delete'
+          || this.body.deleted
           //|| this.pipelineFileRemoved();
+    log.trace('should remove', shouldRemove);
+    return shouldRemove;
   }
 
   pipelineFileAdded() {
