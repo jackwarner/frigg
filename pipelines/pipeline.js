@@ -10,6 +10,7 @@ class Pipeline {
     log.trace('Creating pipeline class for repo', repo);
     this.pipelineServiceName = this.getPipelineServiceName(repo.name);
     this.stage = this.getStage(repo.branch);
+    this.deployedPipelineName = this.getDeployedPipelineName(this.pipelineServiceName, this.stage);
     this.templateDirectory = `pipelines/templates/${repo.pipeline.name}/v${repo.pipeline.version}`;
     this.tempDirectory = `/tmp/pipeline`;
     this.AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
@@ -29,7 +30,7 @@ class Pipeline {
     log.trace('Removing pipeline');
     const params = {
       Message: JSON.stringify({
-        stack: `${this.pipelineServiceName}-${this.stage}`
+        stack: this.deployedPipelineName
       }),
       TopicArn: process.env.ODIN_REMOVE_STACK_TOPIC
     };
@@ -43,6 +44,10 @@ class Pipeline {
 
   getStage(branch) {
     return branch.toUpperCase() === 'MASTER' ? 'prod' : branch;
+  }
+
+  getDeployedPipelineName(serviceName, stage) {
+    return `${serviceName}-${stage}`;
   }
 
 };
