@@ -2,7 +2,7 @@
 const crypto = require('crypto');
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 
-class GHAuth {
+class Validator {
   constructor(headers, body, secret) {
     this.headers = headers;
     this.body = body;
@@ -40,4 +40,4 @@ class GHAuth {
   }
 };
 
-module.exports = GHAuth;
+module.exports = Validator;

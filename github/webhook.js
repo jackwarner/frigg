@@ -1,6 +1,6 @@
 'use strict';
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
-const GHEvent = require('./githubEvent');
+const Payload = require('./payload');
 
 module.exports.handler = (event, context, callback) => {
   handleEvent(event)
@@ -9,15 +9,15 @@ module.exports.handler = (event, context, callback) => {
 };
 
 const handleEvent = event => {
-  let ghEvent = new GHEvent(event);
-  if (!ghEvent.isValid()) {
+  let payload = new Payload(event);
+  if (!payload.isValid()) {
     log.trace('Event not a valid GitHub event, rejecting');
     return Promise.reject(new Error('Invalid event'));
-  } else if (!ghEvent.isPertinent()) {
+  } else if (!payload.isPertinent()) {
     log.trace('Event valid but not relevant, ignoring');
     return Promise.resolve('Event received');
   } else {
-    return ghEvent.sendPipelineEvent();
+    return payload.processEvent();
   }
 };
 

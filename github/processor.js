@@ -3,7 +3,7 @@ const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 
-class PipelineEvent {
+class Processor {
   constructor(event, action, body) {
     log.trace(`Creating pipeline event with params event=${event}, action=${action}, body=${body}`);
     this.event = event;
@@ -89,4 +89,4 @@ class PipelineEvent {
 
 };
 
-module.exports = PipelineEvent;
+module.exports = Processor;
