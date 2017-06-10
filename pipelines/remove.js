@@ -2,7 +2,7 @@
 const AWS = require('aws-sdk');
 const cloudFormation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
-const Repo = require('../lib/repo');
+const Repo = require('./repo');
 const Pipeline = require('./pipeline');
 
 module.exports.handler = (event, context, callback) => {

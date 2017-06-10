@@ -28,8 +28,6 @@ class Processor {
     return sns.publish(params).promise();
   }
 
-  // TODO there is no branch for a deleted repository message
-  // TODO there is also no branch for a new repository message
   getBranch() {
     return this.body.ref ? this.body.ref.substr(this.body.ref.lastIndexOf('/') + 1) : 'master';
   }
