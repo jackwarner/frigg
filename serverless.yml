@@ -70,7 +70,6 @@ resources:
         level: INFO
   
   Resources:
-    # TODO DynamoDB table for storing pipeline information - which exist, build status, etc.
 
     AdminDeployRole:
       Type: AWS::IAM::Role
