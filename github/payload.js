@@ -3,7 +3,7 @@ const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 const Validator = require('./validator');
-const PipelineEvent = require('./pipelineEvent');
+const Processer = require('./processer');
 
 class Payload {
   constructor(payload, secret) {
@@ -11,7 +11,7 @@ class Payload {
     log.trace('Instantiating event from payload', payload);
     this.event = payload.headers['X-GitHub-Event'];
     this.auth = new Validator(payload.headers, payload.body, process.env.GITHUB_WEBHOOK_SECRET);
-    this.pipelineEvent = new PipelineEvent(payload.headers['X-GitHub-Event'], body.action, body);
+    this.processer = new Processer(payload.headers['X-GitHub-Event'], body.action, body);
   }
 
   isValid() {
@@ -25,7 +25,7 @@ class Payload {
   }
 
   processEvent() {
-    return this.pipelineEvent.send();
+    return this.processer.send();
   }
 
 };

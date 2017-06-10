@@ -8,7 +8,7 @@ class Pipeline {
 
   constructor(repo) {
     log.trace('Creating pipeline class for repo', repo);
-    this.pipelineServiceName = this.getPipelineServiceName(repo.name);
+    this.pipelineServiceName = this.getPipelineServiceName(repo);
     this.stage = this.getStage(repo.branch);
     this.deployedPipelineName = this.getDeployedPipelineName(this.pipelineServiceName, this.stage);
     this.templateDirectory = `pipelines/templates/${repo.pipeline.name}/v${repo.pipeline.version}`;
@@ -39,7 +39,7 @@ class Pipeline {
   }
 
   getPipelineServiceName(repo) {
-    return `${repo}-pipeline`;
+    return `${repo.owner}-${repo.name}-pipeline`;
   }
 
   getStage(branch) {
