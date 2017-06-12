@@ -6,6 +6,7 @@ provider:
   runtime: nodejs6.10
   stackTags:
    repo: ${env:REPO_NAME}
+   frigg: pipeline
 
 functions:
   hello:
