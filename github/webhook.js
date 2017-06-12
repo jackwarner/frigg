@@ -1,11 +1,14 @@
 'use strict';
 const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 const Payload = require('./payload');
+const EventType = require('./eventType');
 
 module.exports.handler = (event, context, callback) => {
-  handleEvent(event)
-    .then(response => sendSuccess(callback))
-    .catch( err => sendError(callback, err));
+  const eventType = new EventType(event);
+  sendSuccess(callback);
+  // handleEvent(event)
+  //   .then(response => sendSuccess(callback))
+  //   .catch( err => sendError(callback, err));
 };
 
 const handleEvent = event => {

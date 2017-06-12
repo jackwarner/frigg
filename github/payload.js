@@ -6,7 +6,7 @@ const Validator = require('./validator');
 const Processer = require('./processer');
 
 class Payload {
-  constructor(payload, secret) {
+  constructor(payload) {
     const body = JSON.parse(payload.body);
     log.trace('Instantiating event from payload', payload);
     this.event = payload.headers['X-GitHub-Event'];

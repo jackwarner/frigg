@@ -61,13 +61,13 @@ resources:
   Mappings:
     LogLevel:
       test:
-        level: TRACE
+        level: debug
       local:
-        level: TRACE
+        level: debug
       automation:
-        level: INFO
+        level: info
       production:
-        level: INFO
+        level: info
   
   Resources:
 
