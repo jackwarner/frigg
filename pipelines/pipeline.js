@@ -9,6 +9,7 @@ class Pipeline {
   constructor(repo) {
     log.trace('Creating pipeline class for repo', repo);
     this.pipelineServiceName = this.getPipelineServiceName(repo);
+    this.repoName = this.getRepoName(repo);
     this.stage = this.getStage(repo.branch);
     this.deployedPipelineName = this.getDeployedPipelineName(this.pipelineServiceName, this.stage);
     this.templateDirectory = `pipelines/templates/${repo.pipeline.name}/v${repo.pipeline.version}`;
@@ -21,7 +22,7 @@ class Pipeline {
   deploy() {
     log.trace('Deploying pipeline');
     let command = `cp ${this.templateDirectory} -R ${this.tempDirectory}/ && chmod -R 777 ${this.tempDirectory}`;
-    command += ` && cd ${this.tempDirectory} && export AWS_ACCESS_KEY_ID=${this.AWS_ACCESS_KEY_ID} && export AWS_SECRET_ACCESS_KEY=${this.AWS_SECRET_ACCESS_KEY} && export HOME=${this.tempDirectory} && export STAGE=${this.stage} && export PIPELINE_SERVICE_NAME=${this.pipelineServiceName}`;
+    command += ` && cd ${this.tempDirectory} && export AWS_ACCESS_KEY_ID=${this.AWS_ACCESS_KEY_ID} && export AWS_SECRET_ACCESS_KEY=${this.AWS_SECRET_ACCESS_KEY} && export HOME=${this.tempDirectory} && export STAGE=${this.stage} && export PIPELINE_SERVICE_NAME=${this.pipelineServiceName} && export REPO_NAME=${this.repoName}`;
     command += ` && npm i && npm run deploy`;
     return this.bash.execute(command);
   }
@@ -40,6 +41,10 @@ class Pipeline {
 
   getPipelineServiceName(repo) {
     return `${repo.owner}-${repo.name}-pipeline`;
+  }
+
+  getRepoName(repo) {
+    return `${repo.owner}-${repo.name}`;
   }
 
   getStage(branch) {
