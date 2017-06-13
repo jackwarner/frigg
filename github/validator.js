@@ -1,6 +1,7 @@
 'use strict';
 const crypto = require('crypto');
-const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
+const log = require('winston');
+log.level = process.env.LOG_LEVEL;
 
 class Validator {
   constructor(headers, body, secret) {
@@ -10,7 +11,7 @@ class Validator {
   }
 
   isValid() {
-    log.trace('Checking to see if event is valid');
+    log.info('Checking to see if event is valid');
     return this.hasValidHeaders() && this.hasValidSignature();
   }
 
@@ -18,17 +19,17 @@ class Validator {
     const validHeaders = this.headers['X-Hub-Signature']
                     && this.headers['X-GitHub-Event']
                     && this.headers['X-GitHub-Delivery'];
-    log.trace('Has valid headers:', validHeaders);
+    log.info('Has valid headers:', validHeaders);
     return validHeaders;
   }
 
   hasValidSignature() {
-    log.trace('Checking to see if event has valid auth');
+    log.info('Checking to see if event has valid auth');
     const signature = this.signRequestBody();
-    log.trace('Supplied signature', this.headers['X-Hub-Signature']);
-    log.trace('Computed signature', signature);
+    log.info('Supplied signature', this.headers['X-Hub-Signature']);
+    log.info('Computed signature', signature);
     const validSignature = this.headers['X-Hub-Signature'] === signature;
-    log.trace('Has valid signature', validSignature);
+    log.info('Has valid signature', validSignature);
     return validSignature;
   }
 

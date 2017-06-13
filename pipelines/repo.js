@@ -2,9 +2,10 @@
 const fs = require('fs');
 const path = require('path');
 const tar = require('tar-fs');
-const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 const Bash = require('../lib/bash');
 const yaml = require('js-yaml');
+const log = require('winston');
+log.level = process.env.LOG_LEVEL;
 
 class Repo {
   constructor(repo) {
@@ -24,19 +25,19 @@ class Repo {
   }
 
   cleanDirectory() {
-    log.trace('Cleaning repository directory');
+    log.info('Cleaning repository directory');
     const command = `rm -rf ${this.directory} && mkdir -p ${this.directory}`;
     return this.bash.execute(command);
   }
 
   doClone() {
-    log.trace('Cloning repository');
+    log.info('Cloning repository');
     const command = `cd ${this.directory} && git clone -b ${this.branch} --single-branch --depth 1 https://${this.token}@github.com/${this.owner}/${this.name}.git`; 
     return this.bash.execute(command);
   }
 
   setFriggProperties() {
-    log.trace('Getting Frigg properties');
+    log.info('Getting Frigg properties');
     let config = yaml.safeLoad(fs.readFileSync(`${this.directory}/${this.name}/frigg.yml`, 'utf8'));
     this.pipeline = config.pipeline;
     return Promise.resolve(config);

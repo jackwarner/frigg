@@ -1,7 +1,8 @@
 'use strict';
-const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
 const Payload = require('./payload');
 const EventType = require('./eventType');
+const log = require('winston');
+log.level = process.env.LOG_LEVEL;
 
 module.exports.handler = (event, context, callback) => {
   const eventType = new EventType(event);
@@ -14,10 +15,10 @@ module.exports.handler = (event, context, callback) => {
 const handleEvent = event => {
   let payload = new Payload(event);
   if (!payload.isValid()) {
-    log.trace('Event not a valid GitHub event, rejecting');
+    log.info('Event not a valid GitHub event, rejecting');
     return Promise.reject(new Error('Invalid event'));
   } else if (!payload.isPertinent()) {
-    log.trace('Event valid but not relevant, ignoring');
+    log.info('Event valid but not relevant, ignoring');
     return Promise.resolve('Event received');
   } else {
     return payload.processEvent();

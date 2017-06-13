@@ -2,7 +2,8 @@
 const fs = require('fs');
 const path = require('path');
 const tar = require('tar-fs');
-const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
+const log = require('winston');
+log.level = process.env.LOG_LEVEL;
 
 class Git {
   constructor() {
@@ -11,12 +12,12 @@ class Git {
   }
 
   install() {
-    log.trace('Installing Git');
+    log.info('Installing Git');
     return Promise.all([this.extractGit(), this.updatePaths()]);
   }
 
   extractGit() {
-    log.trace('Extracting Git');
+    log.info('Extracting Git');
     return new Promise( (resolve, reject) => {
       let stream = fs.createReadStream(path.join(__dirname, this.version))
         .pipe(tar.extract(this.directory));
@@ -27,7 +28,7 @@ class Git {
   }
 
   updatePaths() {
-    log.trace('Updating path with Git environment variables');
+    log.info('Updating path with Git environment variables');
     const binPath = path.join(this.directory, 'usr/bin');
     const GIT_TEMPLATE_DIR = path.join(this.directory, 'usr/share/git-core/templates');
     const GIT_EXEC_PATH = path.join(this.directory, 'usr/libexec/git-core');

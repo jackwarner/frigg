@@ -1,11 +1,12 @@
 'use strict';
 const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
-const log = require('console-log-level')({ level: process.env.LOG_LEVEL });
+const log = require('winston');
+log.level = process.env.LOG_LEVEL;
 
 class Processor {
   constructor(event, action, body) {
-    log.trace(`Creating pipeline event with params event=${event}, action=${action}, body=${body}`);
+    log.info(`Creating pipeline event with params event=${event}, action=${action}, body=${body}`);
     this.event = event;
     this.action = action;
     this.body = body;
@@ -24,7 +25,7 @@ class Processor {
       }),
       TopicArn: this.getTopic()
     };
-    log.trace('Sending pipeline event with params', params);
+    log.info('Sending pipeline event with params', params);
     return sns.publish(params).promise();
   }
 
@@ -50,13 +51,13 @@ class Processor {
     const shouldCreate = (this.event === 'repository' && this.action === 'created')
           || this.event === 'create'
           //|| this.pipelineFileAdded();
-    log.trace('should create: ', shouldCreate);
+    log.info('should create: ', shouldCreate);
     return shouldCreate;
   }
 
   shouldUpdatePipeline() {
     const shouldUpdate = this.event === 'push' && this.pipelineFileModified();
-    log.trace('should update', shouldUpdate);
+    log.info('should update', shouldUpdate);
     return shouldUpdate;
   }
 
@@ -65,7 +66,7 @@ class Processor {
           || this.event === 'delete'
           || this.body.deleted
           //|| this.pipelineFileRemoved();
-    log.trace('should remove', shouldRemove);
+    log.info('should remove', shouldRemove);
     return shouldRemove;
   }
 
