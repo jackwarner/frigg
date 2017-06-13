@@ -4,7 +4,6 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "console-log-level": "^1.4.0",
     "js-yaml": "^3.8.4",
     "tar-fs": "^1.15.2",
     "winston": "^2.3.1"
