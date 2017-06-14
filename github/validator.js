@@ -4,15 +4,21 @@ const log = require('winston');
 log.level = process.env.LOG_LEVEL;
 
 class Validator {
-  constructor(headers, body, secret) {
-    this.headers = headers;
-    this.body = body;
-    this.secret = secret;
+  constructor(event) {
+    this.headers = event.headers;
+    this.bodyString = event.body;
+    this.secret = process.env.GITHUB_WEBHOOK_SECRET;
   }
 
-  isValid() {
+  validate() {
     log.info('Checking to see if event is valid');
-    return this.hasValidHeaders() && this.hasValidSignature();
+    if (this.hasValidHeaders() && this.hasValidSignature()) {
+      log.info('Event is valid');
+      return Promise.resolve();
+    } else {
+      log.info('Event not a valid GitHub event, rejecting');
+      return Promise.reject(new Error('Event isn\'t valid'));
+    }
   }
 
   hasValidHeaders() {
@@ -35,7 +41,7 @@ class Validator {
 
   signRequestBody() {
     const signature = crypto.createHmac('sha1', this.secret)
-                          .update(this.body, 'utf-8')
+                          .update(this.bodyString, 'utf-8')
                           .digest('hex');
     return `sha1=${signature}`;
   }
