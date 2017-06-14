@@ -1,7 +1,6 @@
 'use strict';
 const crypto = require('crypto');
-const log = require('winston');
-log.level = process.env.LOG_LEVEL;
+const log = require('../lib/log');
 
 class Validator {
   constructor(event) {

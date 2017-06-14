@@ -1,8 +1,7 @@
 'use strict';
 const PipelineTrigger = require('./pipelineTrigger');
 const Validator = require('./validator');
-const log = require('winston');
-log.level = process.env.LOG_LEVEL;
+const log = require('../lib/log');
 
 module.exports.handler = (event, context, callback) => {
   const validator = new Validator(event);

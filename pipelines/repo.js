@@ -4,8 +4,7 @@ const path = require('path');
 const tar = require('tar-fs');
 const Bash = require('../lib/bash');
 const yaml = require('js-yaml');
-const log = require('winston');
-log.level = process.env.LOG_LEVEL;
+const log = require('../lib/log');
 
 class Repo {
   constructor(repo) {

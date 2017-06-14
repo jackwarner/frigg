@@ -2,8 +2,7 @@
 const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const Bash = require('../lib/bash');
-const log = require('winston');
-log.level = process.env.LOG_LEVEL;
+const log = require('../lib/log');
 
 class Pipeline {
 
