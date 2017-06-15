@@ -32,6 +32,7 @@ functions:
     environment:
       UPSERT_PIPELINE_TOPIC: { Ref: 'SNSTopicUpsertpipeline${opt:stage, self:provider.stage}' }
       REMOVE_PIPELINE_TOPIC: { Ref: 'SNSTopicRemovepipeline${opt:stage, self:provider.stage}' }
+      REMOVE_REPOSITORY_PIPELINES_TOPIC: { Ref: 'SNSTopicRemoverepositorypipelines${opt:stage, self:provider.stage}' }
       GITHUB_WEBHOOK_SECRET:
         Fn::Join:
           - '-'
@@ -52,6 +53,16 @@ functions:
       - sns: remove-pipeline-${opt:stage, self:provider.stage}
     environment:
       ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
+    # Admin role needed for removing serverless applications
+    role: AdminDeployRole
+
+  # TODO build this out, figure out a better file name
+  RemoveRepositoryPipelines:
+    handler: pipelines/repository.handler
+    events:
+      - sns: remove-repostitory-pipelines-${opt:stage, self:provider.stage}
+    environment:
+      REMOVE_PIPELINE_TOPIC: { Ref: 'SNSTopicRemovepipeline${opt:stage, self:provider.stage}' }
     # Admin role needed for removing serverless applications
     role: AdminDeployRole
 
