@@ -1,6 +1,6 @@
 'use strict';
 const AWS = require('aws-sdk');
-const cloudFormation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
+// const cloudFormation = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 const Repo = require('./repo');
 const Pipeline = require('./pipeline');
 const log = require('../lib/log');

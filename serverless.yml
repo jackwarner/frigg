@@ -60,7 +60,7 @@ functions:
   RemoveRepositoryPipelines:
     handler: pipelines/repository.handler
     events:
-      - sns: remove-repostitory-pipelines-${opt:stage, self:provider.stage}
+      - sns: remove-repository-pipelines-${opt:stage, self:provider.stage}
     environment:
       REMOVE_PIPELINE_TOPIC: { Ref: 'SNSTopicRemovepipeline${opt:stage, self:provider.stage}' }
     # Admin role needed for removing serverless applications

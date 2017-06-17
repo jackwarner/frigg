@@ -54,7 +54,7 @@ class PipelineTrigger {
 
   isUpsertAction() {
     return this.isCreateRepo() || this.isCreateBranch() ||
-          (this.isPushToBranch() && this.isFriggConfigAdded() && this.isFriggConfigModified());
+          ( this.isPushToBranch() && ( this.isFriggConfigAdded() || this.isFriggConfigModified()) );
   }
 
   isRemoveAction() {
