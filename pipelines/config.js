@@ -15,7 +15,7 @@ class Config {
     this.pipeline = {
       serviceName: this.getPipelineServiceName(),
       stackName: this.getPipelineStackName(),
-      stage: this.getPipelineStage(),
+      stage: this.getPipelineStage()
     };
   }
 
