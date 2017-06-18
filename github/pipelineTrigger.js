@@ -56,8 +56,8 @@ class PipelineTrigger {
   }
 
   isUpsertAction() {
-    return this.isCreateRepo() || this.isCreateBranch() ||
-          ( this.isPushToBranch() && ( this.isFriggConfigAdded() || this.isFriggConfigModified()) );
+    return ( this.isCreateRepo() || this.isCreateBranch() || this.isPushToBranch() )
+        && ( this.isFriggConfigAdded() || this.isFriggConfigModified());
   }
 
   isRemoveBranchAction() {
@@ -123,10 +123,13 @@ class PipelineTrigger {
   // TODO remove when finished testing
   showIfEventHandled() {
     if (this.isUpsertAction()) {
-        log.info('Upsert action');
+      log.info('Upsert action');
     }
-    if (this.isRemoveAction()) {
-        log.info('Remove action');
+    if (this.isRemoveBranchAction()) {
+      log.info('Remove branch action');
+    }
+    if (this.isRemoveRepositoryAction()) {
+      log.info('Remove repository action');
     }
     if (this.isCreateRepo()) {
       log.info('A new repository was created');
@@ -164,51 +167,6 @@ class PipelineTrigger {
       log.info('This event wasn\'t handled');
     }
   }
-
-  // TODO remove and incorporate into above
-
-  shouldUpsertPipeline() {
-    return this.shouldCreatePipeline() || this.shouldUpdatePipeline();
-  }
-
-  shouldCreatePipeline() {
-    const shouldCreate = (this.event === 'repository' && this.action === 'created')
-          || this.event === 'create'
-          //|| this.pipelineFileAdded();
-    log.info('should create: ', shouldCreate);
-    return shouldCreate;
-  }
-
-  shouldUpdatePipeline() {
-    const shouldUpdate = this.event === 'push' && this.pipelineFileModified();
-    log.info('should update', shouldUpdate);
-    return shouldUpdate;
-  }
-
-  shouldRemovePipeline() {
-    const shouldRemove = (this.event === 'repository' && this.action === 'deleted')
-          || this.event === 'delete'
-          || this.body.deleted
-          //|| this.pipelineFileRemoved();
-    log.info('should remove', shouldRemove);
-    return shouldRemove;
-  }
-
-  pipelineFileAdded() {
-    return true;
-  }
-
-  pipelineFileModified() {
-    // this.body.commits.find( commit => commit.)
-    return true;
-  }
-
-  pipelineFileRemoved() {
-    return true;
-  }
-  
-  sendCreateEvent() {
-  };
 
 };
 

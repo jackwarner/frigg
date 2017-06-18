@@ -38,7 +38,7 @@ class Pipeline {
   }
 
   removeRepository() {
-    return getAllPipelineStacks()
+    return this.getAllPipelineStacks()
       .then(pipelines => this.filterPipelinesFromRepository(pipelines.Stacks))
       .then(pipelines => this.removePipelines(pipelines));
   }
