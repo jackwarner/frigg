@@ -50,9 +50,11 @@ class Pipeline {
 
   filterPipelinesFromRepository(pipelines) {
     log.info('Filtering pipeline stacks', pipelines);
+    let repository = this.config.repository;
     return pipelines.filter( pipeline => {
-      log.info('Filtering pipeline stack', pipeline);
-      return false;
+      const isFriggPipeline = pipeline.Tags.some( tag => tag.Key.toUpperCase() === 'FRIGG' && tag.Value.toUpperCase() === 'PIPELINE');
+      const isInRepository = pipeline.Tags.some( tag => tag.Key.toUpperCase() === 'REPO' && tag.Value.toUpperCase() === this.config.repository.fullyQualifiedName.toUpperCase());
+      return isFriggPipeline && isInRepository;
     })
   }
 
