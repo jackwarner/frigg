@@ -1,0 +1,6 @@
+# This is a sample configuration file
+# The values here should correspond with the library of templates and versions that Frigg supports
+# Currently these templates are defined and managed in frigg itself in the /pipelines/templates directory
+pipeline:
+  name: standard
+  version: 1
