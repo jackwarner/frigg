@@ -12,11 +12,13 @@ class Config {
       name: repository.name,
       fullyQualifiedName: this.getFullyQualifiedRepositoryName(repository)
     }
-    this.pipeline = {
-      serviceName: this.getPipelineServiceName(),
-      stackName: this.getPipelineStackName(),
-      stage: this.getPipelineStage()
-    };
+    if (repository.branch) {
+      this.pipeline = {
+        serviceName: this.getPipelineServiceName(),
+        stackName: this.getPipelineStackName(),
+        stage: this.getPipelineStage()
+      };
+    }
   }
 
   getConfig() {

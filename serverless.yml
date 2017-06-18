@@ -40,7 +40,7 @@ functions:
             - Ref: AWS::AccountId
 
   UpsertPipeline:
-    handler: pipelines/upsert.handler
+    handler: pipelines/upsert.pipeline
     timeout: 300 # 5 minutes
     events:
       - sns: upsert-pipeline-${opt:stage, self:provider.stage}
@@ -48,7 +48,7 @@ functions:
     role: AdminDeployRole
 
   RemovePipeline:
-    handler: pipelines/remove.handler
+    handler: pipelines/remove.pipeline
     events:
       - sns: remove-pipeline-${opt:stage, self:provider.stage}
     environment:
@@ -56,13 +56,12 @@ functions:
     # Admin role needed for removing serverless applications
     role: AdminDeployRole
 
-  # TODO build this out, figure out a better file name
   RemoveRepositoryPipelines:
-    handler: pipelines/repository.handler
+    handler: pipelines/remove.repository
     events:
       - sns: remove-repository-pipelines-${opt:stage, self:provider.stage}
     environment:
-      REMOVE_PIPELINE_TOPIC: { Ref: 'SNSTopicRemovepipeline${opt:stage, self:provider.stage}' }
+      ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
     # Admin role needed for removing serverless applications
     role: AdminDeployRole
 

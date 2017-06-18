@@ -1,6 +1,7 @@
 'use strict';
 const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
+const cf = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 const Bash = require('../lib/bash');
 const log = require('../lib/log');
 
@@ -24,16 +25,40 @@ class Pipeline {
     return this.bash.execute(command);
   }
 
-  remove() {
+  remove(stackName) {
     log.info('Removing pipeline');
     const params = {
       Message: JSON.stringify({
-        stack: this.config.pipeline.stackName
+        stack: stackName ? stackName : this.config.pipeline.stackName
       }),
       TopicArn: process.env.ODIN_REMOVE_STACK_TOPIC
     };
     log.info('Sending remove pipeline request with params', params);
     return sns.publish(params).promise();
+  }
+
+  removeRepository() {
+    return getAllPipelineStacks()
+      .then(pipelines => this.filterPipelinesFromRepository(pipelines.Stacks))
+      .then(pipelines => this.removePipelines(pipelines));
+  }
+
+  getAllPipelineStacks() {
+    const params = {};
+    return cf.describeStacks(params).promise();
+  }
+
+  filterPipelinesFromRepository(pipelines) {
+    log.info('Filtering pipeline stacks', pipelines);
+    return pipelines.filter( pipeline => {
+      log.info('Filtering pipeline stack', pipeline);
+      return false;
+    })
+  }
+
+  removePipelines(pipelines) {
+    log.info('Removing pipelines', pipelines);
+    return pipelines.forEach( pipeline => this.remove(pipeline.StackName) );
   }
 
 };

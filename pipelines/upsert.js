@@ -3,7 +3,7 @@ const AWS = require('aws-sdk');
 const Config = require('./config');
 const Pipeline = require('./pipeline');
 
-module.exports.handler = (event, context, callback) => {
+module.exports.pipeline = (event, context, callback) => {
   const config = new Config(getRepositoryFromEvent(event));
   config.getConfig()
     .then(res => new Pipeline(config))

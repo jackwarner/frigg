@@ -44,9 +44,12 @@ class PipelineTrigger {
     if (this.isUpsertAction()) {
       log.info('Create or update action, upserting pipeline');
       return process.env.UPSERT_PIPELINE_TOPIC;
-    } else if (this.isRemoveAction()) {
+    } else if (this.isRemoveBranchAction()) {
       log.info('Remove or delete action, removing pipeline');
       return process.env.REMOVE_PIPELINE_TOPIC;
+    } else if (this.isRemoveRepositoryAction()) {
+      log.info('Remove repository action, removing all pipelines')
+      return process.env.REMOVE_REPOSITORY_PIPELINES_TOPIC;
     } else {
       throw new Error('No matching topic from action', action);
     }
@@ -57,8 +60,12 @@ class PipelineTrigger {
           ( this.isPushToBranch() && ( this.isFriggConfigAdded() || this.isFriggConfigModified()) );
   }
 
-  isRemoveAction() {
-    return this.isDeleteRepo() || this.isDeleteBranch() || this.isFriggConfigRemoved();
+  isRemoveBranchAction() {
+    return this.isDeleteBranch() || this.isFriggConfigRemoved();
+  }
+
+  isRemoveRepositoryAction() {
+    return this.isDeleteRepo();
   }
 
   isCreateRepo() {
