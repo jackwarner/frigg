@@ -22,8 +22,8 @@ provider:
 
 functions:
 
-  GitHubEventHandler:
-    handler: github/webhook.handler
+  WebhookHandler:
+    handler: webhooks/handler.github
     events:
       - http:
           path: github
@@ -40,30 +40,27 @@ functions:
             - Ref: AWS::AccountId
 
   UpsertPipeline:
-    handler: pipelines/upsert.pipeline
+    handler: pipelines/handler.upsert
     timeout: 300 # 5 minutes
     events:
       - sns: upsert-pipeline-${opt:stage, self:provider.stage}
-    # Admin role needed for deploying serverless applications
-    role: AdminDeployRole
+    role: ServerlessAdminRole # Admin role needed for deploying serverless applications
 
   RemovePipeline:
-    handler: pipelines/remove.pipeline
+    handler: pipelines/handler.removePipeline
     events:
       - sns: remove-pipeline-${opt:stage, self:provider.stage}
     environment:
       ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
-    # Admin role needed for removing serverless applications
-    role: AdminDeployRole
+    role: ServerlessAdminRole # Admin role needed for removing serverless applications
 
   RemoveRepositoryPipelines:
-    handler: pipelines/remove.repository
+    handler: pipelines/handler.removeRepository
     events:
       - sns: remove-repository-pipelines-${opt:stage, self:provider.stage}
     environment:
       ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
-    # Admin role needed for removing serverless applications
-    role: AdminDeployRole
+    role: ServerlessAdminRole # Admin role needed for removing serverless applications
 
 resources:
   Description: Automated service for managing CodePipelines for repos & branches inside a GitHub organization
@@ -81,7 +78,7 @@ resources:
   
   Resources:
 
-    AdminDeployRole:
+    ServerlessAdminRole:
       Type: AWS::IAM::Role
       Properties:
         AssumeRolePolicyDocument:
@@ -105,14 +102,14 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: owner
+          - AttributeName: repository
             AttributeType: S
-          - AttributeName: repo-branch
+          - AttributeName: branch
             AttributeType: S
         KeySchema:
-          - AttributeName: owner
+          - AttributeName: repository
             KeyType: HASH
-          - AttributeName: repo-branch
+          - AttributeName: branch
             KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1

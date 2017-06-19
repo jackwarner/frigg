@@ -19,6 +19,7 @@ class Pipeline {
 
   deploy() {
     log.info('Deploying pipeline');
+    // TODO clean this up and mask access key / tokens when bash command is logged
     let command = `cp ${this.templateDirectory} -R ${this.tempDirectory}/ && chmod -R 777 ${this.tempDirectory}`;
     command += ` && cd ${this.tempDirectory} && export AWS_ACCESS_KEY_ID=${this.AWS_ACCESS_KEY_ID} && export AWS_SECRET_ACCESS_KEY=${this.AWS_SECRET_ACCESS_KEY} && export HOME=${this.tempDirectory} && export STAGE=${this.config.pipeline.stage} && export PIPELINE_SERVICE_NAME=${this.config.pipeline.serviceName} && export REPO_NAME=${this.config.repository.fullyQualifiedName}`;
     command += ` && npm i && npm run deploy`;
@@ -38,6 +39,7 @@ class Pipeline {
   }
 
   removeRepository() {
+    log.info('Removing all pipelines for this repository')
     return this.getAllPipelineStacks()
       .then(pipelines => this.filterPipelinesFromRepository(pipelines.Stacks))
       .then(pipelines => this.removePipelines(pipelines));
