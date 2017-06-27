@@ -1,5 +1,9 @@
 service: frigg
 
+custom:
+  buildsTable:
+    indexName: repository-branch
+
 provider:
   name: aws
   runtime: nodejs6.10
@@ -44,6 +48,8 @@ functions:
     timeout: 300 # 5 minutes
     events:
       - sns: upsert-pipeline-${opt:stage, self:provider.stage}
+    environment:
+      PIPELINE_ADDED: { Ref: 'SNSTopicPipelineadded${opt:stage, self:provider.stage}' }
     role: ServerlessAdminRole # Admin role needed for deploying serverless applications
 
   RemovePipeline:
@@ -61,6 +67,14 @@ functions:
     environment:
       ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
     role: ServerlessAdminRole # Admin role needed for removing serverless applications
+
+  SavePipelineStatus:
+    handler: builds/handler.pipelineAdded
+    events:
+      - sns: pipeline-added-${opt:stage, self:provider.stage}
+    environment:
+      PIPELINES_TABLE: { Ref: PipelinesTable }
+    role: ServerlessAdminRole # Admin role not needed, change this
 
 resources:
   Description: Automated service for managing CodePipelines for repos & branches inside a GitHub organization
@@ -102,14 +116,31 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: repository
+          - AttributeName: 'owner/repository'
             AttributeType: S
           - AttributeName: branch
             AttributeType: S
         KeySchema:
-          - AttributeName: repository
+          - AttributeName: 'owner/repository'
             KeyType: HASH
           - AttributeName: branch
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    
+    BuildsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: 'owner/repository/branch'
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+        KeySchema:
+          - AttributeName: 'owner/repository/branch'
+            KeyType: HASH
+          - AttributeName: timestamp
             KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1

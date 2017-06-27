@@ -23,7 +23,7 @@ class Pipeline {
     let command = `cp ${this.templateDirectory} -R ${this.tempDirectory}/ && chmod -R 777 ${this.tempDirectory}`;
     command += ` && cd ${this.tempDirectory} && export AWS_ACCESS_KEY_ID=${this.AWS_ACCESS_KEY_ID} && export AWS_SECRET_ACCESS_KEY=${this.AWS_SECRET_ACCESS_KEY} && export HOME=${this.tempDirectory} && export STAGE=${this.config.pipeline.stage} && export PIPELINE_SERVICE_NAME=${this.config.pipeline.serviceName} && export REPO_NAME=${this.config.repository.fullyQualifiedName}`;
     command += ` && npm i && npm run deploy`;
-    return this.bash.execute(command);
+    return this.bash.execute(command).then(res => this.emitPipelineAdded());
   }
 
   remove(stackName) {
@@ -57,12 +57,25 @@ class Pipeline {
       const isFriggPipeline = pipeline.Tags.some( tag => tag.Key.toUpperCase() === 'FRIGG' && tag.Value.toUpperCase() === 'PIPELINE');
       const isInRepository = pipeline.Tags.some( tag => tag.Key.toUpperCase() === 'REPO' && tag.Value.toUpperCase() === this.config.repository.fullyQualifiedName.toUpperCase());
       return isFriggPipeline && isInRepository;
-    })
+    });
   }
 
   removePipelines(pipelines) {
     log.info('Removing pipelines', pipelines);
     return pipelines.forEach( pipeline => this.remove(pipeline.StackName) );
+  }
+
+  emitPipelineAdded() {
+    log.info('Emitting pipeline added event');
+    const params = {
+      Message: JSON.stringify({
+        repository: this.config.repository,
+        pipeline: this.config.pipeline
+      }),
+      TopicArn: process.env.PIPELINE_ADDED
+    };
+    log.info('Sending pipeline added event with params', params);
+    return sns.publish(params).promise();
   }
 
 };

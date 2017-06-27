@@ -17,6 +17,7 @@ class Config {
         serviceName: this.getPipelineServiceName(),
         stackName: this.getPipelineStackName(),
         stage: this.getPipelineStage()
+        // properties from frigg.yml are added here in getConfig() below
       };
     }
   }
