@@ -8,52 +8,50 @@ class Build {
   constructor(build) {
     this.repository = build.repository;
     this.pipeline = build.pipeline;
-    this.build = build.build;
+    this.status = build.status;
   }
 
-  savePipeline() {
+  saveStartedStatus() {
     const params = {
-      TableName: process.env.PIPELINES_TABLE,
-      Item: this.getPipelineItem()
+      TableName: process.env.BUILDS_TABLE,
+      Item: this.getStartedItem()
     };
-    console.log('Creating pipeline with params', params);
+    console.log('Creating build with params', params);
     return new Promise( (resolve, reject) => {
       docs.put(params, (err, data) => err ? reject(err) : resolve())
     });
   }
 
-  removePipeline() {
+  saveFinishedStatus() {
     const params = {
-      TableName: process.env.PIPELINES_TABLE,
-      Key: this.getPipelineKey()
+      TableName: process.env.BUILDS_TABLE,
+      Item: this.getFinishedItem()
     };
-    console.log('Removing pipeline with params', params);
+    console.log('Creating build with params', params);
     return new Promise( (resolve, reject) => {
-      docs.delete(params, (err, data) => err ? reject(err) : resolve())
+      docs.put(params, (err, data) => err ? reject(err) : resolve())
     });
   }
 
-  removeBuilds() {
+  removeAll() {
+    return Promise.resolve();
     // TODO get all build items, then bulk delete them
     // https://stackoverflow.com/questions/38465146/how-do-i-batch-delete-with-dynamodb
   }
 
-  getPipelineItem() {
-    let pipeline = {
-      templateName: this.pipeline.name,
-      templateVersion: this.pipeline.version
-    };
-    return Object.assign(this.getPipelineKey(), pipeline);
+  getStartedItem() {
+    let build = { };
+    return Object.assign(this.getKey(), build);
   }
 
-  getPipelineKey() {
-    return {
-      'owner/repository': `${this.repository.owner}/${this.repository.name}`,
-      branch: this.repository.branch
+  getFinishedItem() {
+    let build = {
+      status: this.status
     };
+    return Object.assign(this.getKey(), build);
   }
 
-  getBuildKey() {
+  getKey() {
     return {
       'owner/repository/branch': `${this.repository.owner}/${this.repository.name}/${this.repository.branch}`,
       timestamp: ''

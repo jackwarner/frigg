@@ -70,21 +70,39 @@ functions:
       PIPELINE_REMOVED: { Ref: 'SNSTopicPipelineremoved${opt:stage, self:provider.stage}' }
     role: ServerlessAdminRole # Admin role needed for removing serverless applications
 
-  SavePipelineRecord:
-    handler: builds/handler.pipelineAdded
+  SavePipelineStatus:
+    handler: status/handler.pipelineAdded
     events:
       - sns: pipeline-added-${opt:stage, self:provider.stage}
     environment:
       PIPELINES_TABLE: { Ref: PipelinesTable }
     role: ServerlessAdminRole # Admin role not needed, change this
 
-  RemovePipelineRecord:
-    handler: builds/handler.pipelineRemoved
+  RemovePipelineStatus:
+    handler: status/handler.pipelineRemoved
     events:
       - sns: pipeline-removed-${opt:stage, self:provider.stage}
     environment:
       PIPELINES_TABLE: { Ref: PipelinesTable }
+      BUILDS_TABLE: { Ref: BuildsTable }
     role: ServerlessAdminRole # Admin role not needed, change this
+
+  SaveBuildStartedStatus:
+    handler: status/handler.buildStarted
+    events:
+      - sns: build-started-${opt:stage, self:provider.stage} 
+    environment:
+      BUILDS_TABLE: { Ref: BuildsTable }
+    role: ServerlessAdminRole # Admin role not needed, change this
+
+  SaveBuildFinishedStatus:
+    handler: status/handler.buildFinished
+    events
+      - sns: build-finished-${opt:stage, self:provider.stage} 
+    environment:
+      BUILDS_TABLE: { Ref: BuildsTable }
+    role: ServerlessAdminRole # Admin role not needed, change this
+
 
 resources:
   Description: Automated service for managing CodePipelines for repos & branches inside a GitHub organization
