@@ -35,7 +35,7 @@ class Pipeline {
       TopicArn: process.env.ODIN_REMOVE_STACK_TOPIC
     };
     log.info('Sending remove pipeline request with params', params);
-    return sns.publish(params).promise();
+    return sns.publish(params).promise().then(res => this.emitPipelineRemoved());
   }
 
   removeRepository() {
@@ -75,6 +75,19 @@ class Pipeline {
       TopicArn: process.env.PIPELINE_ADDED
     };
     log.info('Sending pipeline added event with params', params);
+    return sns.publish(params).promise();
+  }
+
+  emitPipelineRemoved() {
+    log.info('Emitting pipeline removed event');
+    const params = {
+      Message: JSON.stringify({
+        repository: this.config.repository,
+        pipeline: this.config.pipeline
+      }),
+      TopicArn: process.env.PIPELINE_REMOVED
+    };
+    log.info('Sending pipeline removed event with params', params);
     return sns.publish(params).promise();
   }
 

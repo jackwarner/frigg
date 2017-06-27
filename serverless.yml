@@ -58,6 +58,7 @@ functions:
       - sns: remove-pipeline-${opt:stage, self:provider.stage}
     environment:
       ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
+      PIPELINE_REMOVED: { Ref: 'SNSTopicPipelineremoved${opt:stage, self:provider.stage}' }
     role: ServerlessAdminRole # Admin role needed for removing serverless applications
 
   RemoveRepositoryPipelines:
@@ -66,12 +67,21 @@ functions:
       - sns: remove-repository-pipelines-${opt:stage, self:provider.stage}
     environment:
       ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
+      PIPELINE_REMOVED: { Ref: 'SNSTopicPipelineremoved${opt:stage, self:provider.stage}' }
     role: ServerlessAdminRole # Admin role needed for removing serverless applications
 
-  SavePipelineStatus:
+  SavePipelineRecord:
     handler: builds/handler.pipelineAdded
     events:
       - sns: pipeline-added-${opt:stage, self:provider.stage}
+    environment:
+      PIPELINES_TABLE: { Ref: PipelinesTable }
+    role: ServerlessAdminRole # Admin role not needed, change this
+
+  RemovePipelineRecord:
+    handler: builds/handler.pipelineRemoved
+    events:
+      - sns: pipeline-removed-${opt:stage, self:provider.stage}
     environment:
       PIPELINES_TABLE: { Ref: PipelinesTable }
     role: ServerlessAdminRole # Admin role not needed, change this
