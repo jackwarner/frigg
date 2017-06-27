@@ -41,9 +41,7 @@ class Build {
   getPipelineItem() {
     let pipeline = {
       templateName: this.pipeline.name,
-      templateVersion: this.pipeline.version,
-      lastBuildDate: '',
-      lastBuildStatus: ''
+      templateVersion: this.pipeline.version
     };
     return Object.assign(this.getPipelineKey(), pipeline);
   }
