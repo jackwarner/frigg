@@ -54,7 +54,7 @@ class Build {
   getKey() {
     return {
       'owner/repository/branch': `${this.repository.owner}/${this.repository.name}/${this.repository.branch}`,
-      timestamp: ''
+      timestamp: '' // TODO how to get a timestamp for this key?  needs to be available on both build start and build finish status for object create and object update
     }
   }
 

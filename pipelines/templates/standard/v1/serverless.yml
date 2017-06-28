@@ -1,13 +1,140 @@
-service: ${env:PIPELINE_SERVICE_NAME}
+
+custom:
+  defaults:
+    source:
+      owner: santaswap
+      repository: test
+      branch: test
 
 provider:
   name: aws
   stage: local
   runtime: nodejs6.10
   stackTags:
-   repo: ${env:REPO_NAME}
+   repo: repo # ${env:REPO_NAME}
    frigg: pipeline
 
 functions:
   hello:
     handler: handler.hello
+
+resources:
+
+  Resources:
+
+    Pipeline:
+      Type: AWS::CodePipeline::Pipeline
+      Properties:
+        Name: asdf
+        ArtifactStore:
+          Type: S3
+          Location: { Ref: PipelineArtifactStore }
+        RoleArn: { Fn::GetAtt: PipelineRole.Arn }
+        Stages:
+          
+          # Application source stage
+          - Name: Source
+            Actions:
+              - Name: GetApplication
+                RunOrder: 1
+                ActionTypeId:
+                  Category: Source
+                  Owner: ThirdParty
+                  Provider: GitHub
+                  Version: 1
+                Configuration:
+                  Owner: santaswap
+                  Repo: test
+                  Branch: master
+                  OAuthToken: 51480b322483c876825936647e1306eab5b7e028
+                OutputArtifacts:
+                  - Name: ApplicationArtifact
+          
+          # Application build stage
+          - Name: Build
+            Actions:
+              - Name: DeployApplication
+                RunOrder: 1
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: 1
+                Configuration:
+                  ProjectName: { Ref: CodeBuild }
+                InputArtifacts:
+                  - Name: ApplicationArtifact
+                OutputArtifacts:
+                  - Name: ApplicationBuildOutput
+
+    CodeBuild:
+      Type: AWS::CodeBuild::Project
+      Properties:
+        Name: CodeBuild
+        Description: Application build project
+        Source:
+          Type: CODEPIPELINE
+        Environment:
+          Image: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
+          Type: LINUX_CONTAINER
+          ComputeType: BUILD_GENERAL1_SMALL
+          EnvironmentVariables:
+            - Name: STAGE
+              Value: local
+        Artifacts:
+          Type: CODEPIPELINE
+        ServiceRole: { Ref: CodeBuildRole }
+        TimeoutInMinutes: 60
+
+    PipelineArtifactStore:
+      Type: AWS::S3::Bucket
+
+    PipelineRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Action: sts:AssumeRole
+              Effect: Allow
+              Principal:
+                Service:
+                  - codepipeline.amazonaws.com
+        Path: /
+        Policies:
+          - PolicyName: TODO
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: '*'
+                  Resource: '*'
+
+    CodeBuildRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Action: sts:AssumeRole
+              Effect: Allow
+              Principal:
+                AWS:
+                  Fn::Join:
+                    - ''
+                    - - 'arn:aws:iam::'
+                      - Ref: AWS::AccountId
+                      - :root
+            - Action: sts:AssumeRole
+              Effect: Allow
+              Principal:
+                Service: codebuild.amazonaws.com
+        Path: /
+        Policies:
+          - PolicyName: ANOTHER_TODO
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: '*'
+                  Resource: '*'

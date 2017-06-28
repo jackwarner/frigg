@@ -97,7 +97,7 @@ functions:
 
   SaveBuildFinishedStatus:
     handler: status/handler.buildFinished
-    events
+    events:
       - sns: build-finished-${opt:stage, self:provider.stage} 
     environment:
       BUILDS_TABLE: { Ref: BuildsTable }
