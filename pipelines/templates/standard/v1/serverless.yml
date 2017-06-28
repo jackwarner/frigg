@@ -1,3 +1,4 @@
+service: test-pipeline #${env:PIPELINE_SERVICE_NAME}
 
 custom:
   defaults:
