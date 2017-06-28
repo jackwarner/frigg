@@ -20,13 +20,14 @@ functions:
     handler: handler.hello
 
 resources:
+  Description: Frigg-generated CodePipeline for deploying the ${env:OWNER}/${env:REPO} serverless application
 
   Resources:
 
     Pipeline:
       Type: AWS::CodePipeline::Pipeline
       Properties:
-        Name: asdf
+        Name: ${env:OWNER}-${env:REPO}-${env:BRANCH}-pipeline
         ArtifactStore:
           Type: S3
           Location: { Ref: PipelineArtifactStore }
@@ -71,7 +72,7 @@ resources:
     CodeBuild:
       Type: AWS::CodeBuild::Project
       Properties:
-        Name: FriggBuild
+        Name: ${env:OWNER}-${env:REPO}-${env:BRANCH}-build
         Description: Application build project
         Source:
           Type: CODEPIPELINE
