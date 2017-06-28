@@ -19,9 +19,11 @@ class Pipeline {
 
   deploy() {
     log.info('Deploying pipeline');
+    const repository = this.config.repository, pipeline = this.config.pipeline;
     // TODO clean this up and mask access key / tokens when bash command is logged
     let command = `cp ${this.templateDirectory} -R ${this.tempDirectory}/ && chmod -R 777 ${this.tempDirectory}`;
-    command += ` && cd ${this.tempDirectory} && export AWS_ACCESS_KEY_ID=${this.AWS_ACCESS_KEY_ID} && export AWS_SECRET_ACCESS_KEY=${this.AWS_SECRET_ACCESS_KEY} && export HOME=${this.tempDirectory} && export STAGE=${this.config.pipeline.stage} && export PIPELINE_SERVICE_NAME=${this.config.pipeline.serviceName} && export REPO_NAME=${this.config.repository.fullyQualifiedName}`;
+    command += ` && cd ${this.tempDirectory} && export AWS_ACCESS_KEY_ID=${this.AWS_ACCESS_KEY_ID} && export AWS_SECRET_ACCESS_KEY=${this.AWS_SECRET_ACCESS_KEY} && export GITHUB_TOKEN=${process.env.GITHUB_TOKEN}`;
+    command += ` && export HOME=${this.tempDirectory} && export STAGE=${pipeline.stage} && export PIPELINE_SERVICE_NAME=${pipeline.serviceName} && export REPO_NAME=${repository.fullyQualifiedName} && export OWNER=${repository.owner} && export REPO=${repository.name} && export BRANCH=${repository.branch}`;
     command += ` && npm i && npm run deploy`;
     return this.bash.execute(command).then(res => this.emitPipelineAdded());
   }

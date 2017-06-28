@@ -1,4 +1,4 @@
-service: test-pipeline #${env:PIPELINE_SERVICE_NAME}
+service: ${env:PIPELINE_SERVICE_NAME}
 
 custom:
   defaults:
@@ -12,7 +12,7 @@ provider:
   stage: local
   runtime: nodejs6.10
   stackTags:
-   repo: repo # ${env:REPO_NAME}
+   repo: ${env:REPO_NAME}
    frigg: pipeline
 
 functions:
@@ -36,7 +36,7 @@ resources:
           # Application source stage
           - Name: Source
             Actions:
-              - Name: GetApplication
+              - Name: Source
                 RunOrder: 1
                 ActionTypeId:
                   Category: Source
@@ -44,17 +44,17 @@ resources:
                   Provider: GitHub
                   Version: 1
                 Configuration:
-                  Owner: santaswap
-                  Repo: test
-                  Branch: master
-                  OAuthToken: ${opt:githubToken}
+                  Owner: ${env:OWNER}
+                  Repo: ${env:REPO}
+                  Branch: ${env:BRANCH}
+                  OAuthToken: ${env:GITHUB_TOKEN}
                 OutputArtifacts:
                   - Name: ApplicationArtifact
           
           # Application build stage
           - Name: Build
             Actions:
-              - Name: DeployApplication
+              - Name: Deploy
                 RunOrder: 1
                 ActionTypeId:
                   Category: Build
@@ -71,7 +71,7 @@ resources:
     CodeBuild:
       Type: AWS::CodeBuild::Project
       Properties:
-        Name: CodeBuild
+        Name: FriggBuild
         Description: Application build project
         Source:
           Type: CODEPIPELINE
