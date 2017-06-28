@@ -82,7 +82,7 @@ resources:
           ComputeType: BUILD_GENERAL1_SMALL
           EnvironmentVariables:
             - Name: STAGE
-              Value: local
+              Value: ${env:STAGE}
         Artifacts:
           Type: CODEPIPELINE
         ServiceRole: { Ref: CodeBuildRole }
