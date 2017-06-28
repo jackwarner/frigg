@@ -47,7 +47,7 @@ resources:
                   Owner: santaswap
                   Repo: test
                   Branch: master
-                  OAuthToken: 51480b322483c876825936647e1306eab5b7e028
+                  OAuthToken: ${opt:githubToken}
                 OutputArtifacts:
                   - Name: ApplicationArtifact
           
