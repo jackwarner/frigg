@@ -40,6 +40,10 @@ class Pipeline {
     return sns.publish(params).promise().then(res => this.emitPipelineRemoved());
   }
 
+  removeBranch() {
+    // TODO remove all relevant repos by isfrigg pipeline and is matching repo/stage
+  }
+
   removeRepository() {
     log.info('Removing all pipelines for this repository')
     return this.getAllPipelineStacks()
