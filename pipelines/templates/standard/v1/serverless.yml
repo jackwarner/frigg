@@ -83,6 +83,8 @@ resources:
           EnvironmentVariables:
             - Name: STAGE
               Value: ${env:STAGE}
+            - Name: REPO_NAME
+              Value: ${env:REPO_NAME}
         Artifacts:
           Type: CODEPIPELINE
         ServiceRole: { Ref: CodeBuildRole }
@@ -140,3 +142,8 @@ resources:
                 - Effect: Allow
                   Action: '*'
                   Resource: '*'
+
+  Outputs:
+
+    PipelineArtifactStore:
+      Value: { Ref: PipelineArtifactStore }
