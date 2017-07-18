@@ -45,6 +45,7 @@ functions:
     environment:
       WEBHOOK_HANDLER_URL: { 'Fn::Join' : ['', [ 'https://', { 'Ref' : ApiGatewayRestApi }, '.execute-api.', { 'Ref' : 'AWS::Region' }, '.amazonaws.com/${opt:stage, self:provider.stage}/github' ] ] }
       GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
+      FRIGG_CONFIG_BUCKET: { Ref: FriggConfig }
 
   UpsertPipeline:
     handler: pipelines/handler.upsert
@@ -177,10 +178,13 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
 
-    RegisterWebhookCustomResource:
-      Type: Custom::RegisterWebhookCustomResource
+    ManageWebhookCustomResource:
+      Type: Custom::ManageWebhook
       Version: 1.0
       # TODO figure out which of these is latest and only depend on it
       DependsOn: [ ApiGatewayRestApi, ApiGatewayMethodGithubPost, ApiGatewayResourceGithub, HandleWebhookLambdaFunction, HandleWebhookLambdaPermissionApiGateway ]
       Properties:
         ServiceToken: { Fn::GetAtt: [ ManageWebhookLambdaFunction, Arn ] }
+
+    FriggConfig:
+      Type: AWS::S3::Bucket

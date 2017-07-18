@@ -1,6 +1,7 @@
 'use strict';
 const https = require('https');
 const url = require('url');
+const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const GitHubApi = require('github');
 const log = require('../lib/log');
 
@@ -9,13 +10,15 @@ module.exports.manage = (event, context, callback) => {
   log.info('Request type', event.RequestType);
 
   if (event.RequestType === 'Delete') {
-    remove()
+    getConfig()
+      .then(remove)
       .then(response => sendResponse(event, context, 'SUCCESS'))
       .catch(response => sendResponse(event, context, 'FAILED'));
   }
 
   if (event.RequestType === 'Create') {
     register()
+      .then(saveConfig)
       .then(response => sendResponse(event, context, 'SUCCESS'))
       .catch(response => sendResponse(event, context, 'FAILED'));
   }
@@ -48,14 +51,53 @@ const register = () => {
         reject(err);
       } else {
         log.info('Successfully created webhook', res)
-        resolve('Successfully created webhook');
+        resolve(res);
       }
     });
   });
 }
 
-const remove = () => {
-  return Promise.resolve();
+const saveConfig = response => {
+  const params = {
+    Body: '',
+    Bucket: process.env.FRIGG_CONFIG_BUCKET,
+    Key: 'webhook.json'
+  };
+  log.info('Saving webhook config with params', params);
+  return s3.putObject(params).toPromise();
+}
+
+const remove = config => {
+  return new Promise( (resolve, reject) => {
+    const github = new GitHubApi();
+    github.authenticate({
+      type: 'token',
+      token: process.env.GITHUB_TOKEN
+    });
+    const params = {
+      org: 'santaswap',
+      id: '123' //TODO get id from config
+    };
+    log.info('Removing webhook with params', params);
+    github.orgs.deleteHook(params, (err, res) => {
+      if (err) {
+        log.error('Error removing webhook', err);
+        reject(err);
+      } else {
+        log.info('Successfully removed webhook', res)
+        resolve(res);
+      }
+    });
+  });
+}
+
+const getConfig = () => {
+  const params = {
+    Bucket: process.env.FRIGG_CONFIG_BUCKET,
+    Key: 'webhook.json'
+  };
+  log.info('Getting webhook config with params', params);
+  return s3.getObject(params).toPromise();
 }
 
 const sendResponse = (event, context, responseStatus, responseData) => {
