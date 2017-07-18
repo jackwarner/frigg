@@ -5,11 +5,15 @@ const log = require('../lib/log');
 
 module.exports.github = (event, context, callback) => {
   const validator = new Validator(event);
-  validator.validate()
-    .then(res => new PipelineTrigger(event))
-    .then(pipelineTrigger => pipelineTrigger.send())
-    .then(res => sendSuccess(callback))
-    .catch(err => sendError(callback, err));
+  if (validator.isPing()) {
+    return sendSuccess(callback);
+  } else {
+    validator.validate()
+      .then(res => new PipelineTrigger(event))
+      .then(pipelineTrigger => pipelineTrigger.send())
+      .then(res => sendSuccess(callback))
+      .catch(err => sendError(callback, err));
+  }
 }
 
 const sendSuccess = callback => {

@@ -20,6 +20,11 @@ class Validator {
     }
   }
 
+  isPing() {
+    log.info('Checking to see if event is ping');
+    return this.headers['X-GitHub-Event'] === 'ping';
+  }
+
   hasValidHeaders() {
     const validHeaders = this.headers['X-Hub-Signature']
                     && this.headers['X-GitHub-Event']
