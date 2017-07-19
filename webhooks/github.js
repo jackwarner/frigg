@@ -114,7 +114,7 @@ const getWebhookConfig = () => {
 }
 
 const emptyConfigBucket = () => {
-  return listBucketObjects().then(objects => deleteObjects(objects, bucket));
+  return listBucketObjects().then(deleteObjects);
 }
 
 const listBucketObjects = () => {
@@ -123,9 +123,9 @@ const listBucketObjects = () => {
   return s3.listObjectsV2(params).promise();
 };
 
-const deleteObjects = (objects, bucket) => {
+const deleteObjects = objects => {
   const params = {
-    Bucket: bucket,
+    Bucket: process.env.FRIGG_CONFIG_BUCKET,
     Delete: {
       Objects: objects.Contents.map( object => { return { Key: object.Key } })
     }
