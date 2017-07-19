@@ -5,15 +5,21 @@ const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const GitHubApi = require('github');
 const log = require('../lib/log');
 
+const CONFIG_KEY = 'github-webhook-config.json';
+
 module.exports.manage = (event, context, callback) => {
   log.info('Receiving event for github management', event);
   log.info('Request type', event.RequestType);
 
   if (event.RequestType === 'Delete') {
-    getConfig()
-      .then(remove)
-      .then(response => sendResponse(event, context, 'SUCCESS'))
-      .catch(response => sendResponse(event, context, 'FAILED'));
+    
+    sendResponse(event, context, 'SUCCESS');
+    // getConfig()
+    //   .then(remove)
+      // TODO empty config bucket
+      // .then(response => sendResponse(event, context, 'SUCCESS'))
+      // .catch(response => sendResponse(event, context, 'SUCCESS'));
+      // .catch(response => sendResponse(event, context, 'FAILED'));
   }
 
   if (event.RequestType === 'Create') {
@@ -24,7 +30,11 @@ module.exports.manage = (event, context, callback) => {
   }
 
   if (event.RequestType === 'Update') {
-    sendResponse(event, context, 'SUCCESS')
+    sendResponse(event, context, 'SUCCESS');
+    // getConfig()
+    //   .then(update)
+    //   .then(response => sendResponse(event, context, 'SUCCESS'))
+    //   .catch(response => sendResponse(event, context, 'FAILED'));
   } 
 }
 
@@ -57,16 +67,6 @@ const register = () => {
   });
 }
 
-const saveConfig = response => {
-  const params = {
-    Body: '',
-    Bucket: process.env.FRIGG_CONFIG_BUCKET,
-    Key: 'webhook.json'
-  };
-  log.info('Saving webhook config with params', params);
-  return s3.putObject(params).toPromise();
-}
-
 const remove = config => {
   return new Promise( (resolve, reject) => {
     const github = new GitHubApi();
@@ -74,6 +74,8 @@ const remove = config => {
       type: 'token',
       token: process.env.GITHUB_TOKEN
     });
+    config = JSON.parse(config);
+    log.info('')
     const params = {
       org: 'santaswap',
       id: '123' //TODO get id from config
@@ -91,10 +93,24 @@ const remove = config => {
   });
 }
 
+const update = () => {
+
+}
+
+const saveConfig = response => {
+  const params = {
+    Body: JSON.stringify(response),
+    Bucket: process.env.FRIGG_CONFIG_BUCKET,
+    Key: CONFIG_KEY
+  };
+  log.info('Saving webhook config with params', params);
+  return s3.putObject(params).toPromise();
+}
+
 const getConfig = () => {
   const params = {
     Bucket: process.env.FRIGG_CONFIG_BUCKET,
-    Key: 'webhook.json'
+    Key: CONFIG_KEY
   };
   log.info('Getting webhook config with params', params);
   return s3.getObject(params).toPromise();
