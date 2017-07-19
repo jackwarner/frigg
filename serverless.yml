@@ -3,6 +3,7 @@ service: frigg
 custom:
   buildsTable:
     indexName: repository-branch
+  webhookSecret: ${file(./lib/config.js):webhookSecret}
 
 provider:
   name: aws
@@ -26,7 +27,7 @@ provider:
 
 functions:
 
-  WebhookHandler:
+  HandleWebhook:
     handler: webhooks/handler.github
     events:
       - http:
@@ -37,11 +38,15 @@ functions:
       UPSERT_PIPELINE_TOPIC: { Ref: 'SNSTopicUpsertpipeline${opt:stage, self:provider.stage}' }
       REMOVE_PIPELINE_TOPIC: { Ref: 'SNSTopicRemovepipeline${opt:stage, self:provider.stage}' }
       REMOVE_REPOSITORY_PIPELINES_TOPIC: { Ref: 'SNSTopicRemoverepositorypipelines${opt:stage, self:provider.stage}' }
-      GITHUB_WEBHOOK_SECRET:
-        Fn::Join:
-          - '-'
-          - - '${opt:stage, self:provider.stage}'
-            - Ref: AWS::AccountId
+      GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
+
+  ManageWebhook:
+    handler: webhooks/github.manage
+    environment:
+      WEBHOOK_HANDLER_URL: { 'Fn::Join' : ['', [ 'https://', { 'Ref' : ApiGatewayRestApi }, '.execute-api.', { 'Ref' : 'AWS::Region' }, '.amazonaws.com/${opt:stage, self:provider.stage}/github' ] ] }
+      GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
+      FRIGG_CONFIG_BUCKET: { Ref: FriggConfig }
+    role: ServerlessAdminRole # Admin role needed for deploying serverless applications
 
   UpsertPipeline:
     handler: pipelines/handler.upsert
@@ -173,3 +178,14 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+
+    ManageWebhookCustomResource:
+      Type: Custom::ManageWebhook
+      Version: 1.0
+      # TODO figure out which of these is latest and only depend on it
+      DependsOn: [ ApiGatewayRestApi, ApiGatewayMethodGithubPost, ApiGatewayResourceGithub, HandleWebhookLambdaFunction, HandleWebhookLambdaPermissionApiGateway ]
+      Properties:
+        ServiceToken: { Fn::GetAtt: [ ManageWebhookLambdaFunction, Arn ] }
+
+    FriggConfig:
+      Type: AWS::S3::Bucket
