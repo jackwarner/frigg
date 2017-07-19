@@ -1,6 +1,7 @@
 'use strict';
 const https = require('https');
 const url = require('url');
+const AWS = require('aws-sdk');
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const GitHubApi = require('github');
 const log = require('../lib/log');
@@ -15,7 +16,8 @@ module.exports.manage = (event, context, callback) => {
     
     sendResponse(event, context, 'SUCCESS');
     // getConfig()
-    //   .then(remove)
+    //   .then(removeHook)
+        // .then(emptyBucket)
       // TODO empty config bucket
       // .then(response => sendResponse(event, context, 'SUCCESS'))
       // .catch(response => sendResponse(event, context, 'SUCCESS'));
@@ -32,7 +34,7 @@ module.exports.manage = (event, context, callback) => {
   if (event.RequestType === 'Update') {
     sendResponse(event, context, 'SUCCESS');
     // getConfig()
-    //   .then(update)
+    //   .then(updateHook)
     //   .then(response => sendResponse(event, context, 'SUCCESS'))
     //   .catch(response => sendResponse(event, context, 'FAILED'));
   } 
@@ -115,6 +117,27 @@ const getConfig = () => {
   log.info('Getting webhook config with params', params);
   return s3.getObject(params).toPromise();
 }
+
+const emptyBucket = () => {
+  return listBucketObjects(bucket).then(objects => deleteObjects(objects, bucket));
+}
+
+const listBucketObjects = bucket => {
+  const params = { Bucket: process.env.FRIGG_CONFIG_BUCKET };
+  log.debug('Listing objects with params', params);
+  return s3.listObjectsV2(params).promise();
+};
+
+const deleteObjects = (objects, bucket) => {
+  const params = {
+    Bucket: bucket,
+    Delete: {
+      Objects: objects.Contents.map( object => { return { Key: object.Key } })
+    }
+  };
+  log.debug('Deleting objects with params', params);
+  return s3.deleteObjects(params).promise();
+};
 
 const sendResponse = (event, context, responseStatus, responseData) => {
   const responseBody = JSON.stringify({
