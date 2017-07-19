@@ -46,6 +46,7 @@ functions:
       WEBHOOK_HANDLER_URL: { 'Fn::Join' : ['', [ 'https://', { 'Ref' : ApiGatewayRestApi }, '.execute-api.', { 'Ref' : 'AWS::Region' }, '.amazonaws.com/${opt:stage, self:provider.stage}/github' ] ] }
       GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
       FRIGG_CONFIG_BUCKET: { Ref: FriggConfig }
+    role: ServerlessAdminRole # Admin role needed for deploying serverless applications
 
   UpsertPipeline:
     handler: pipelines/handler.upsert

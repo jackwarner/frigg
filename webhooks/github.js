@@ -13,34 +13,29 @@ module.exports.manage = (event, context, callback) => {
   log.info('Request type', event.RequestType);
 
   if (event.RequestType === 'Delete') {
-    
-    sendResponse(event, context, 'SUCCESS');
-    // getConfig()
-    //   .then(removeHook)
-        // .then(emptyBucket)
-      // TODO empty config bucket
-      // .then(response => sendResponse(event, context, 'SUCCESS'))
-      // .catch(response => sendResponse(event, context, 'SUCCESS'));
-      // .catch(response => sendResponse(event, context, 'FAILED'));
+    getWebhookConfig()
+      .then(removeWebhook)
+      .then(emptyConfigBucket)
+      .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
+      .catch(error => sendCloudFormationResponse(event, context, 'FAILED', error));
   }
 
   if (event.RequestType === 'Create') {
-    register()
-      .then(saveConfig)
-      .then(response => sendResponse(event, context, 'SUCCESS'))
-      .catch(response => sendResponse(event, context, 'FAILED'));
+    registerWebhook()
+      .then(saveWebookConfig)
+      .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
+      .catch(error => sendCloudFormationResponse(event, context, 'FAILED', error));
   }
 
   if (event.RequestType === 'Update') {
-    sendResponse(event, context, 'SUCCESS');
-    // getConfig()
-    //   .then(updateHook)
-    //   .then(response => sendResponse(event, context, 'SUCCESS'))
-    //   .catch(response => sendResponse(event, context, 'FAILED'));
+    getWebhookConfig()
+      .then(updateWebhook)
+      .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
+      .catch(error => sendCloudFormationResponse(event, context, 'FAILED', error));
   } 
 }
 
-const register = () => {
+const registerWebhook = () => {
   return new Promise( (resolve, reject) => {
     const github = new GitHubApi();
     github.authenticate({
@@ -69,18 +64,18 @@ const register = () => {
   });
 }
 
-const remove = config => {
+const removeWebhook = config => {
   return new Promise( (resolve, reject) => {
     const github = new GitHubApi();
     github.authenticate({
       type: 'token',
       token: process.env.GITHUB_TOKEN
     });
-    config = JSON.parse(config);
-    log.info('')
+    config = JSON.parse(config.Body.toString('utf-8'))
+    log.info('json parsed config', config)
     const params = {
       org: 'santaswap',
-      id: '123' //TODO get id from config
+      id: config.data.id
     };
     log.info('Removing webhook with params', params);
     github.orgs.deleteHook(params, (err, res) => {
@@ -95,34 +90,34 @@ const remove = config => {
   });
 }
 
-const update = () => {
+const updateWebhook = () => {
 
 }
 
-const saveConfig = response => {
+const saveWebookConfig = response => {
   const params = {
     Body: JSON.stringify(response),
     Bucket: process.env.FRIGG_CONFIG_BUCKET,
     Key: CONFIG_KEY
   };
   log.info('Saving webhook config with params', params);
-  return s3.putObject(params).toPromise();
+  return s3.putObject(params).promise();
 }
 
-const getConfig = () => {
+const getWebhookConfig = () => {
   const params = {
     Bucket: process.env.FRIGG_CONFIG_BUCKET,
     Key: CONFIG_KEY
   };
   log.info('Getting webhook config with params', params);
-  return s3.getObject(params).toPromise();
+  return s3.getObject(params).promise();
 }
 
-const emptyBucket = () => {
-  return listBucketObjects(bucket).then(objects => deleteObjects(objects, bucket));
+const emptyConfigBucket = () => {
+  return listBucketObjects().then(objects => deleteObjects(objects, bucket));
 }
 
-const listBucketObjects = bucket => {
+const listBucketObjects = () => {
   const params = { Bucket: process.env.FRIGG_CONFIG_BUCKET };
   log.debug('Listing objects with params', params);
   return s3.listObjectsV2(params).promise();
@@ -139,10 +134,11 @@ const deleteObjects = (objects, bucket) => {
   return s3.deleteObjects(params).promise();
 };
 
-const sendResponse = (event, context, responseStatus, responseData) => {
+const sendCloudFormationResponse = (event, context, responseStatus, responseData) => {
+  log.info('Error:', responseData)
   const responseBody = JSON.stringify({
     Status: responseStatus,
-    Reason: 'Details in CloudWatch Log Stream: ' + context.logStreamName,
+    Reason: responseData ? JSON.stringify(responseData) : responseStatus,
     PhysicalResourceId: context.logStreamName,
     StackId: event.StackId,
     RequestId: event.RequestId,
