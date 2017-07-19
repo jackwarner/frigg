@@ -4,6 +4,7 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "github": "^9.2.0",
     "github-api": "^3.0.0",
     "js-yaml": "^3.8.4",
     "winston": "^2.3.1"
