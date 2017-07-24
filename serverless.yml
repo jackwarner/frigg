@@ -3,7 +3,7 @@ service: frigg
 custom:
   buildsTable:
     indexName: repository-branch
-  webhookSecret: ${file(./lib/config.js):webhookSecret}
+  webhookSecret: ${file(./lib/config.js):generateWebhookSecret}
 
 provider:
   name: aws

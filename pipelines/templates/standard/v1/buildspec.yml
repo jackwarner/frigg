@@ -1,0 +1,28 @@
+version: 0.1
+
+phases:
+  install:
+    commands:
+      - echo "nothing to install"
+  
+  pre_build:
+    commands:
+      - echo "installing dependencies - `pwd`"
+      - npm i
+      - npm i -g serverless
+
+  build:
+    commands:
+      - echo "starting build in `pwd`"
+      - serverless deploy --stage $STAGE
+      # STAGE branch
+      # GITHUB_TOKEN
+      # PIPELINE_SERVICE_NAME owner-repository-pipeline
+      # REPO_NAME owner-repository
+      # OWNER owner
+      # REPO repo
+      # BRANCH branch
+
+  post_build:
+    commands:
+      - echo "build completed"
