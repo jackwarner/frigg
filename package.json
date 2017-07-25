@@ -8,5 +8,8 @@
     "github-api": "^3.0.0",
     "js-yaml": "^3.8.4",
     "winston": "^2.3.1"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.89.0"
   }
 }

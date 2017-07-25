@@ -1,5 +1,21 @@
 version: 0.1
 
+env:
+  variables:
+    STAGE: placeholder
+    PIPELINE_SERVICE_NAME: placeholder
+    REPO_NAME: placeholder
+    OWNER: placeholder
+    REPO: placeholder
+    BRANCH: placeholder
+    # STAGE branch
+    # GITHUB_TOKEN
+    # PIPELINE_SERVICE_NAME owner-repository-pipeline
+    # REPO_NAME owner-repository
+    # OWNER owner
+    # REPO repo
+    # BRANCH branch
+
 phases:
   install:
     commands:
@@ -15,13 +31,6 @@ phases:
     commands:
       - echo "starting build in `pwd`"
       - serverless deploy --stage $STAGE
-      # STAGE branch
-      # GITHUB_TOKEN
-      # PIPELINE_SERVICE_NAME owner-repository-pipeline
-      # REPO_NAME owner-repository
-      # OWNER owner
-      # REPO repo
-      # BRANCH branch
 
   post_build:
     commands:

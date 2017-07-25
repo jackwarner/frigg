@@ -1,6 +1,7 @@
 'use strict';
 const yaml = require('js-yaml');
 const GitHub = require('github-api');
+const parameters = require('../lib/parameters');
 const log = require('../lib/log');
 
 class Config {
@@ -22,10 +23,37 @@ class Config {
     }
   }
 
-  getConfig() {
+  loadConfig() {
     log.info('Getting frigg config properties');
-    let pipeline = this.pipeline;
-    const github = new GitHub({ token: process.env.GITHUB_TOKEN });
+    return parameters.getGitHubAccessToken()
+      .then(configureGitHub)
+      .then(loadConfig)
+      .then(setConfig);
+
+    // const github = new GitHub({ token: process.env.GITHUB_TOKEN });
+    // let repository = github.getRepo(this.repository.owner, this.repository.name);
+    // return new Promise( (resolve, reject) => {
+    //   repository.getContents(this.repository.branch, 'frigg.yml', true, (err, data) => {
+    //     if (err) {
+    //       log.error('Error getting frigg config from repository', err);
+    //       reject(err);
+    //     } else {
+    //       log.info('Got frigg config', data);
+    //       let config = yaml.safeLoad(data);
+    //       pipeline = Object.assign(pipeline, config.pipeline);
+    //       resolve(config);
+    //     }
+    //   });
+    // });
+  }
+
+  configureGitHub(githubToken) {
+    const github = new GitHub({ token: githubToken });
+    return Promise.resolve(github)
+  }
+
+  getConfig(github) {
+    log.info('this.repository.owner', this.repository.owner)
     let repository = github.getRepo(this.repository.owner, this.repository.name);
     return new Promise( (resolve, reject) => {
       repository.getContents(this.repository.branch, 'frigg.yml', true, (err, data) => {
@@ -34,12 +62,17 @@ class Config {
           reject(err);
         } else {
           log.info('Got frigg config', data);
-          let config = yaml.safeLoad(data);
-          pipeline = Object.assign(pipeline, config.pipeline);
-          resolve(config);
+          resolve(data);
         }
       });
     });
+  }
+
+  setConfig(data) {
+    let pipeline = this.pipeline;
+    const config = yaml.safeLoad(data);
+    this.pipeline = Object.assign(this.pipeline, config.pipeline);
+    return Promise.resolve();
   }
 
   getFullyQualifiedRepositoryName(repository) {

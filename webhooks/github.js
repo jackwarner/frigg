@@ -4,6 +4,7 @@ const url = require('url');
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const GitHubApi = require('github');
+const parameters = require('../lib/parameters');
 const log = require('../lib/log');
 
 const CONFIG_KEY = 'github-webhook-config.json';
@@ -13,7 +14,7 @@ module.exports.manage = (event, context, callback) => {
   log.info('Request type', event.RequestType);
 
   if (event.RequestType === 'Delete') {
-    getWebhookConfig()
+    Promise.all([getWebhookConfig(), parameters.getGitHubAccessToken()])
       .then(removeWebhook)
       .then(emptyConfigBucket)
       .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
@@ -21,26 +22,28 @@ module.exports.manage = (event, context, callback) => {
   }
 
   if (event.RequestType === 'Create') {
-    registerWebhook()
+    parameters.getGitHubAccessToken()
+      .then(registerWebhook)
       .then(saveWebookConfig)
       .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
       .catch(error => sendCloudFormationResponse(event, context, 'FAILED', error));
   }
 
   if (event.RequestType === 'Update') {
-    getWebhookConfig()
+    Promise.all([getWebhookConfig(), parameters.getGitHubAccessToken()])
       .then(updateWebhook)
       .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
       .catch(error => sendCloudFormationResponse(event, context, 'FAILED', error));
   } 
 }
 
-const registerWebhook = () => {
+const registerWebhook = githubToken => {
+  log.info('GitHub token', githubToken);
   return new Promise( (resolve, reject) => {
     const github = new GitHubApi();
     github.authenticate({
       type: 'token',
-      token: process.env.GITHUB_TOKEN
+      token: githubToken
     });
     const params = {
       org: 'santaswap',
@@ -64,12 +67,14 @@ const registerWebhook = () => {
   });
 }
 
-const removeWebhook = config => {
+const removeWebhook = values => {
+  const config = values[0];
+  const githubToken = values[1];
   return new Promise( (resolve, reject) => {
     const github = new GitHubApi();
     github.authenticate({
       type: 'token',
-      token: process.env.GITHUB_TOKEN
+      token: githubToken
     });
     config = JSON.parse(config.Body.toString('utf-8'))
     log.info('json parsed config', config)
@@ -90,8 +95,9 @@ const removeWebhook = config => {
   });
 }
 
-const updateWebhook = () => {
-
+const updateWebhook = values => {
+  const config = values[0];
+  const githubToken = values[1];
 }
 
 const saveWebookConfig = response => {
