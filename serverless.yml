@@ -195,11 +195,11 @@ resources:
     CodeBuild:
       Type: AWS::CodeBuild::Project
       Properties:
-        Name: name
-        Description: description
+        Name: FriggPipelineDeployer
+        Description: 'CodeBuild used by Frigg to deploy pipelines for other projects'
         Source:
           Type: S3
-          Location: { 'Fn::Join' : ['', [ '/', { 'Ref' : FriggBuildArtifacts }, 'build.zip' ] ] }
+          Location: { 'Fn::Join' : ['/', [ { 'Ref' : FriggBuildArtifacts }, 'build.zip' ] ] }
         Environment:
           Image: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
           Type: LINUX_CONTAINER
@@ -230,7 +230,7 @@ resources:
                 Service: codebuild.amazonaws.com
         Path: /
         Policies:
-          - PolicyName: ANOTHER_TODO
+          - PolicyName: FriggPipelineDeployerRole
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
