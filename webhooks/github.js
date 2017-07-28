@@ -38,7 +38,6 @@ module.exports.manage = (event, context, callback) => {
 }
 
 const registerWebhook = githubToken => {
-  log.info('GitHub token', githubToken);
   return new Promise( (resolve, reject) => {
     const github = new GitHubApi();
     github.authenticate({
@@ -68,7 +67,7 @@ const registerWebhook = githubToken => {
 }
 
 const removeWebhook = values => {
-  const config = values[0];
+  let config = values[0];
   const githubToken = values[1];
   return new Promise( (resolve, reject) => {
     const github = new GitHubApi();
@@ -77,7 +76,7 @@ const removeWebhook = values => {
       token: githubToken
     });
     config = JSON.parse(config.Body.toString('utf-8'))
-    log.info('json parsed config', config)
+    log.info('json parsed webhook instance config', config)
     const params = {
       org: 'santaswap',
       id: config.data.id
@@ -98,6 +97,7 @@ const removeWebhook = values => {
 const updateWebhook = values => {
   const config = values[0];
   const githubToken = values[1];
+  return Promise.resolve();
 }
 
 const saveWebookConfig = response => {
@@ -141,7 +141,10 @@ const deleteObjects = objects => {
 };
 
 const sendCloudFormationResponse = (event, context, responseStatus, responseData) => {
-  log.info('Error:', responseData)
+  if (responseData) {
+    log.info('Sending response data (usually error message)', responseData);
+  }
+
   const responseBody = JSON.stringify({
     Status: responseStatus,
     Reason: responseData ? JSON.stringify(responseData) : responseStatus,
