@@ -5,7 +5,7 @@ const Pipeline = require('./pipeline');
 
 module.exports.upsert = (event, context, callback) => {
   const config = new Config(getRepositoryFromEvent(event));
-  config.getConfig()
+  config.loadConfig()
     .then(res => new Pipeline(config))
     .then(pipeline => pipeline.deploy())
     .then(res => callback(null, res))
