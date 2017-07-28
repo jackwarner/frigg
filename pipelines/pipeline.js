@@ -18,6 +18,9 @@ class Pipeline {
   }
 
   deploy() {
+    // TODO create zip with pipeline and params
+    // upload zip to bucket with versioning
+    // trigger codebuild with version
     log.info('Deploying pipeline');
     const repository = this.config.repository, pipeline = this.config.pipeline;
     // TODO clean this up and mask access key / tokens when bash command is logged
