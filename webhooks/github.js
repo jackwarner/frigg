@@ -49,7 +49,8 @@ const registerWebhook = githubToken => {
       name: 'web',
       config: {
         url: process.env.WEBHOOK_HANDLER_URL,
-        secret: process.env.GITHUB_WEBHOOK_SECRET
+        secret: process.env.GITHUB_WEBHOOK_SECRET,
+        content_type: 'json'
       },
       events: [ 'delete', 'create', 'push', 'repository' ]
     };
@@ -75,11 +76,11 @@ const removeWebhook = values => {
       type: 'token',
       token: githubToken
     });
-    config = JSON.parse(config.Body.toString('utf-8'))
-    log.info('json parsed webhook instance config', config)
+    config = JSON.parse(config.Body.toString('utf-8'));
+    log.info('Parsed webhook config', config);
     const params = {
       org: 'santaswap',
-      id: config.data.id
+      id: config.data.id,
     };
     log.info('Removing webhook with params', params);
     github.orgs.deleteHook(params, (err, res) => {
@@ -87,7 +88,7 @@ const removeWebhook = values => {
         log.error('Error removing webhook', err);
         reject(err);
       } else {
-        log.info('Successfully removed webhook', res)
+        log.info('Successfully removed webhook', res);
         resolve(res);
       }
     });
@@ -95,9 +96,33 @@ const removeWebhook = values => {
 }
 
 const updateWebhook = values => {
-  const config = values[0];
+  let config = values[0];
   const githubToken = values[1];
-  return Promise.resolve();
+  return new Promise( (resolve, reject) => {
+    const github = new GitHubApi();
+    github.authenticate({
+      type: 'token',
+      token: githubToken
+    });
+    config = JSON.parse(config.Body.toString('utf-8'));
+    log.info('Parsed webhook config', config);
+    const params = {
+      config: {
+        url: process.env.WEBHOOK_HANDLER_URL,
+        secret: process.env.GITHUB_WEBHOOK_SECRET,
+        content_type: 'json'
+      }
+    };
+    log.info('Updating webhook with params', params);
+    github.orgs.editHook('santaswap', config.data.id, config, (err, res) => {
+      if (err) {
+        log.error('Error updating webhook', err);
+      } else {
+        log.info('Successfully updated webhook', res);
+        resolve(res);
+      }
+    });
+  });
 }
 
 const saveWebookConfig = response => {

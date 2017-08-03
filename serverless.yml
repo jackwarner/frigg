@@ -188,6 +188,7 @@ resources:
       DependsOn: [ ApiGatewayRestApi, ApiGatewayMethodGithubPost, ApiGatewayResourceGithub, HandleWebhookLambdaFunction, HandleWebhookLambdaPermissionApiGateway ]
       Properties:
         ServiceToken: { Fn::GetAtt: [ ManageWebhookLambdaFunction, Arn ] }
+        GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
 
     FriggConfig:
       Type: AWS::S3::Bucket

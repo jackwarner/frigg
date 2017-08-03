@@ -41,6 +41,7 @@ class PipelineTrigger {
   }
 
   getTopic() {
+    log.info('Getting the pipeline notification topic');
     if (this.isUpsertAction()) {
       log.info('Create or update action, upserting pipeline');
       return process.env.UPSERT_PIPELINE_TOPIC;
@@ -51,7 +52,8 @@ class PipelineTrigger {
       log.info('Remove repository action, removing all pipelines')
       return process.env.REMOVE_REPOSITORY_PIPELINES_TOPIC;
     } else {
-      throw new Error('No matching topic from action', action);
+      log.error('No matching topic');
+      throw new Error('No matching topic');
     }
   }
 
@@ -109,15 +111,24 @@ class PipelineTrigger {
   }
 
   isFileAdded(file) {
-    return this.body && this.body.head_commit && this.body.head_commit.added && this.body.head_commit.added.includes(file)
+    log.info('Seeing if file was added', file);
+    const added = this.body && this.body.head_commit && this.body.head_commit.added && this.body.head_commit.added.includes(file);
+    log.info(`File ${ added ? 'was' : 'wasn\'t' } added`);
+    return added;
   }
 
   isFileModified(file) {
-    return this.body && this.body.head_commit && this.body.head_commit.modified && this.body.head_commit.modified.includes(file)
+    log.info('Seeing if file was modified', file);
+    const modified = this.body && this.body.head_commit && this.body.head_commit.modified && this.body.head_commit.modified.includes(file);
+    log.info(`File ${ modified ? 'was' : 'wasn\'t' } modified`);
+    return modified;
   }
 
   isFileRemoved(file) {
-    return this.body && this.body.head_commit && this.body.head_commit.removed && this.body.head_commit.removed.includes(file)
+    log.info('Seeing if file was removed', file);
+    const removed = this.body && this.body.head_commit && this.body.head_commit.removed && this.body.head_commit.removed.includes(file)
+    log.info(`File ${ removed ? 'was' : 'wasn\'t' } removed`);
+    return removed;
   }
 
   // TODO remove when finished testing
