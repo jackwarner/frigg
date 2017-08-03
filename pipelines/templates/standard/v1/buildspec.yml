@@ -26,3 +26,4 @@ phases:
   post_build:
     commands:
       - echo "build completed"
+      # call to frigg and notify of build status

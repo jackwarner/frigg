@@ -1,8 +1,12 @@
 'use strict';
+const fs = require('fs');
 const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const cf = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
+const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const codebuild = new AWS.CodeBuild({ apiVersion: '2016-10-06' });
 const Bash = require('../lib/bash');
+const Zip = require('../lib/zip');
 const log = require('../lib/log');
 
 class Pipeline {
@@ -12,15 +16,22 @@ class Pipeline {
     this.config = config;
     this.templateDirectory = `pipelines/templates/${config.pipeline.name}/v${config.pipeline.version}`;
     this.tempDirectory = `/tmp/pipeline`;
+    this.codeBuildArtifact = `${this.tempDirectory}/zip/build.zip`;
     this.AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
     this.AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
     this.bash = new Bash();
   }
 
   deploy() {
+    return createBuildArtifact()
+      .then(uploadBuildArtifact)
+      .then(triggerBuild)
     // TODO create zip with pipeline and params
     // upload zip to bucket with versioning
     // trigger codebuild with version
+    
+
+    
     log.info('Deploying pipeline');
     const repository = this.config.repository, pipeline = this.config.pipeline;
     // TODO clean this up and mask access key / tokens when bash command is logged
@@ -29,6 +40,28 @@ class Pipeline {
     command += ` && export HOME=${this.tempDirectory} && export STAGE=${pipeline.stage} && export PIPELINE_SERVICE_NAME=${pipeline.serviceName} && export REPO_NAME=${repository.fullyQualifiedName} && export OWNER=${repository.owner} && export REPO=${repository.name} && export BRANCH=${repository.branch}`;
     command += ` && npm i && npm run deploy`;
     return this.bash.execute(command).then(res => this.emitPipelineAdded());
+  }
+
+  createBuildArtifact() {
+    let zip = new Zip(this.templateDirectory);
+    return Promise.resolve(zip);
+  }
+
+  uploadBuildArtifact(zip) {
+    const params = {
+      Body: zip.toBuffer(),
+      Bucket: '',
+      Key: ''
+    };
+    s3.putObject(params).promise();
+  }
+
+  triggerBuild(artifactData) {
+    const params = {
+      projectName: '',
+      sourceVersion: artifactData.VersionId
+    };
+    codebuild.startBuild(params).promise();
   }
 
   remove(stackName) {
