@@ -107,6 +107,8 @@ const updateWebhook = values => {
     config = JSON.parse(config.Body.toString('utf-8'));
     log.info('Parsed webhook config', config);
     const params = {
+      org: 'santaswap',
+      id: config.data.id,
       config: {
         url: process.env.WEBHOOK_HANDLER_URL,
         secret: process.env.GITHUB_WEBHOOK_SECRET,
@@ -114,9 +116,10 @@ const updateWebhook = values => {
       }
     };
     log.info('Updating webhook with params', params);
-    github.orgs.editHook('santaswap', config.data.id, config, (err, res) => {
+    github.orgs.editHook(params, (err, res) => {
       if (err) {
         log.error('Error updating webhook', err);
+        reject(err);
       } else {
         log.info('Successfully updated webhook', res);
         resolve(res);
