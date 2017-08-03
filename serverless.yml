@@ -54,6 +54,8 @@ functions:
       - sns: upsert-pipeline-${opt:stage, self:provider.stage}
     environment:
       PIPELINE_ADDED: { Ref: 'SNSTopicPipelineadded${opt:stage, self:provider.stage}' }
+      BUILD_ARTIFACT_BUCKET: { Ref: BuildArtifacts }
+      BUILD_PROJECT_NAME: { Ref: CodeBuild }
     role: ServerlessAdminRole # Admin role needed for deploying serverless applications
 
   RemovePipeline:
@@ -189,17 +191,20 @@ resources:
     FriggConfig:
       Type: AWS::S3::Bucket
 
-    FriggBuildArtifacts:
+    BuildArtifacts:
       Type: AWS::S3::Bucket
+      Properties:
+        VersioningConfiguration:
+          Status: Enabled
 
     CodeBuild:
       Type: AWS::CodeBuild::Project
       Properties:
-        Name: FriggPipelineDeployer
-        Description: 'CodeBuild used by Frigg to deploy pipelines for other projects'
+        Name: FriggPipelineDeployer-${opt:stage, self:provider.stage}
+        Description: 'CodeBuild used by Frigg in the ${opt:stage, self:provider.stage} environment to deploy pipelines for other projects'
         Source:
           Type: S3
-          Location: { 'Fn::Join' : ['/', [ { 'Ref' : FriggBuildArtifacts }, 'build.zip' ] ] }
+          Location: { 'Fn::Join' : ['/', [ { 'Ref' : BuildArtifacts }, 'build.zip' ] ] }
         Environment:
           Image: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
           Type: LINUX_CONTAINER
