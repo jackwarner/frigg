@@ -56,6 +56,7 @@ functions:
       PIPELINE_ADDED: { Ref: 'SNSTopicPipelineadded${opt:stage, self:provider.stage}' }
       BUILD_ARTIFACT_BUCKET: { Ref: BuildArtifacts }
       BUILD_PROJECT_NAME: { Ref: CodeBuild }
+    # update role - only need to upload s3 and trigger code build
     role: ServerlessAdminRole # Admin role needed for deploying serverless applications
 
   RemovePipeline:
