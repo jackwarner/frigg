@@ -1,4 +1,4 @@
-version: 0.1
+version: 0.2
 
 env:
   variables:
@@ -8,13 +8,6 @@ env:
     OWNER: placeholder
     REPO: placeholder
     BRANCH: placeholder
-    # STAGE branch
-    # GITHUB_TOKEN
-    # PIPELINE_SERVICE_NAME owner-repository-pipeline
-    # REPO_NAME owner-repository
-    # OWNER owner
-    # REPO repo
-    # BRANCH branch
 
 phases:
   install:
@@ -23,13 +16,11 @@ phases:
   
   pre_build:
     commands:
-      - echo "installing dependencies - `pwd`"
       - npm i
       - npm i -g serverless
 
   build:
     commands:
-      - echo "starting build in `pwd`"
       - serverless deploy --stage $STAGE
 
   post_build:
