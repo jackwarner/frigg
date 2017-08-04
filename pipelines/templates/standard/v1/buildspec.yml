@@ -9,6 +9,7 @@ env:
     REPO: placeholder
     BRANCH: placeholder
     BUILD_STATUS_TOPIC: arn:aws:sns:us-east-1:109092357768:test
+    GITHUB_TOKEN: placeholder
 
 phases:
   install:

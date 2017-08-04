@@ -15,12 +15,11 @@ module.exports.manage = (event, context, callback) => {
 
   if (shouldRemoveWebhook(event)) {
     Promise.all([getWebhookConfig(), parameters.getGitHubAccessToken()])
-      // Don't put the entire stack in a bad state due to a failed delete elsewhere
-      .catch(error => sendCloudFormationResponse(event, context, 'SUCCESS', error))
       .then(removeWebhook)
       .then(emptyConfigBucket)
       .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
-      .catch(error => sendCloudFormationResponse(event, context, 'FAILED', error));
+      // Don't put the entire stack in a bad state due to a failed delete or update elsewhere
+      .catch(error => sendCloudFormationResponse(event, context, 'SUCCESS', error));
   }
 
   if (shouldDoNothing(event)) {
@@ -37,11 +36,10 @@ module.exports.manage = (event, context, callback) => {
 
   if (shouldUpdateWebhook(event)) {
     Promise.all([getWebhookConfig(), parameters.getGitHubAccessToken()])
-      // Don't put the entire stack in a bad state due to a failed delete elsewhere
-      .catch(error => sendCloudFormationResponse(event, context, 'SUCCESS', error))
       .then(updateWebhook)
       .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
-      .catch(error => sendCloudFormationResponse(event, context, 'FAILED', error));
+      // Don't put the entire stack in a bad state due to a failed delete or update elsewhere
+      .catch(error => sendCloudFormationResponse(event, context, 'SUCCESS', error));
   } 
 }
 
