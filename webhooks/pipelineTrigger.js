@@ -16,13 +16,21 @@ class PipelineTrigger {
     this.showIfEventHandled();
   }
 
+  isRelevant() {
+    return getTopic();
+  }
+
   send() {
-    const params = {
-      Message: this.getMessage(),
-      TopicArn: this.getTopic()
-    };
-    log.info('Sending pipeline event with params', params);
-    return sns.publish(params).promise();
+    if (!getTopic()) {
+      return Promise.resolve();
+    } else {
+      const params = {
+        Message: this.getMessage(),
+        TopicArn: this.getTopic()
+      };
+      log.info('Sending pipeline event with params', params);
+      return sns.publish(params).promise();
+    }
   }
 
   getMessage() {
@@ -52,8 +60,7 @@ class PipelineTrigger {
       log.info('Remove repository action, removing all pipelines')
       return process.env.REMOVE_REPOSITORY_PIPELINES_TOPIC;
     } else {
-      log.error('No matching topic');
-      throw new Error('No matching topic');
+      log.info('No matching topic, ignoring because not a relevant event');
     }
   }
 

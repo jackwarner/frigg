@@ -13,15 +13,21 @@ module.exports.manage = (event, context, callback) => {
   log.info('Receiving event for github management', event);
   log.info('Request type', event.RequestType);
 
-  if (event.RequestType === 'Delete') {
+  if (shouldRemoveWebhook(event)) {
     Promise.all([getWebhookConfig(), parameters.getGitHubAccessToken()])
+      // Don't put the entire stack in a bad state due to a failed delete elsewhere
+      .catch(error => sendCloudFormationResponse(event, context, 'SUCCESS', error))
       .then(removeWebhook)
       .then(emptyConfigBucket)
       .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
       .catch(error => sendCloudFormationResponse(event, context, 'FAILED', error));
   }
 
-  if (event.RequestType === 'Create') {
+  if (shouldDoNothing(event)) {
+    sendCloudFormationResponse(event, context, 'SUCCESS');
+  }
+
+  if (shouldCreateWebhook(event)) {
     parameters.getGitHubAccessToken()
       .then(registerWebhook)
       .then(saveWebookConfig)
@@ -29,12 +35,30 @@ module.exports.manage = (event, context, callback) => {
       .catch(error => sendCloudFormationResponse(event, context, 'FAILED', error));
   }
 
-  if (event.RequestType === 'Update') {
+  if (shouldUpdateWebhook(event)) {
     Promise.all([getWebhookConfig(), parameters.getGitHubAccessToken()])
+      // Don't put the entire stack in a bad state due to a failed delete elsewhere
+      .catch(error => sendCloudFormationResponse(event, context, 'SUCCESS', error))
       .then(updateWebhook)
       .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
       .catch(error => sendCloudFormationResponse(event, context, 'FAILED', error));
   } 
+}
+
+const shouldRemoveWebhook = event => {
+  return event.RequestType === 'Delete' && process.env.GITHUB_WEBHOOK_SECRET !== event.GITHUB_WEBHOOK_SECRET;
+}
+
+const shouldDoNothing = event => {
+  return event.RequestType === 'Delete' && process.env.GITHUB_WEBHOOK_SECRET === event.GITHUB_WEBHOOK_SECRET;
+}
+
+const shouldUpdateWebhook = event => {
+  return event.RequestType === 'Update';
+}
+
+const shouldCreateWebhook = event => {
+  return event.RequestType === 'Create';
 }
 
 const registerWebhook = githubToken => {

@@ -8,7 +8,7 @@ env:
     OWNER: placeholder
     REPO: placeholder
     BRANCH: placeholder
-    BUILD_STATUS_TOPIC: placeholder
+    BUILD_STATUS_TOPIC: arn:aws:sns:us-east-1:109092357768:test
 
 phases:
   install:
@@ -28,4 +28,4 @@ phases:
     commands:
       # - echo "build completed"
       # call to frigg and notify of build status
-      - aws sns publish --topic-arn $BUILD_STATUS_TOPIC --message "test"
+      - aws sns publish --topic-arn $BUILD_STATUS_TOPIC --message "{"buildStatus":"$CODEBUILD_BUILD_SUCCEEDING"}"
