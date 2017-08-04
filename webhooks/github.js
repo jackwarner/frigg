@@ -14,6 +14,7 @@ module.exports.manage = (event, context, callback) => {
   log.info('Request type', event.RequestType);
 
   if (shouldRemoveWebhook(event)) {
+    log.info('Removing webhook');
     Promise.all([getWebhookConfig(), parameters.getGitHubAccessToken()])
       .then(removeWebhook)
       .then(emptyConfigBucket)
@@ -23,10 +24,12 @@ module.exports.manage = (event, context, callback) => {
   }
 
   if (shouldDoNothing(event)) {
+    log.info('Not doing anything to webhook');
     sendCloudFormationResponse(event, context, 'SUCCESS');
   }
 
   if (shouldCreateWebhook(event)) {
+    log.info('Creating webhook');
     parameters.getGitHubAccessToken()
       .then(registerWebhook)
       .then(saveWebookConfig)
@@ -35,6 +38,7 @@ module.exports.manage = (event, context, callback) => {
   }
 
   if (shouldUpdateWebhook(event)) {
+    log.info('Updating webhook');
     Promise.all([getWebhookConfig(), parameters.getGitHubAccessToken()])
       .then(updateWebhook)
       .then(response => sendCloudFormationResponse(event, context, 'SUCCESS'))
@@ -44,11 +48,11 @@ module.exports.manage = (event, context, callback) => {
 }
 
 const shouldRemoveWebhook = event => {
-  return event.RequestType === 'Delete' && process.env.GITHUB_WEBHOOK_SECRET !== event.GITHUB_WEBHOOK_SECRET;
+  return event.RequestType === 'Delete' && process.env.GITHUB_WEBHOOK_SECRET === event.GITHUB_WEBHOOK_SECRET;
 }
 
 const shouldDoNothing = event => {
-  return event.RequestType === 'Delete' && process.env.GITHUB_WEBHOOK_SECRET === event.GITHUB_WEBHOOK_SECRET;
+  return event.RequestType === 'Delete' && process.env.GITHUB_WEBHOOK_SECRET !== event.GITHUB_WEBHOOK_SECRET;
 }
 
 const shouldUpdateWebhook = event => {

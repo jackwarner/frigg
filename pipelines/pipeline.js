@@ -18,9 +18,9 @@ class Pipeline {
 
   deploy() {
     log.info('Deploying pipeline');
-    return createBuildArtifact()
-      .then(uploadBuildArtifact)
-      .then(triggerBuild);
+    return this.createBuildArtifact()
+      .then(artifact => this.uploadBuildArtifact(artifact))
+      .then(artifactMetaData => this.triggerBuild(artifactMetaData));
   }
 
   createBuildArtifact() {
@@ -36,16 +36,17 @@ class Pipeline {
       Key: 'build.zip'
     };
     log.info('Uploading build artifact with params', params);
-    s3.putObject(params).promise();
+    return s3.putObject(params).promise();
   }
 
-  triggerBuild(artifactData) {
+  triggerBuild(artifactMetaData) {
+    log.info('Received artifact meta data', artifactMetaData);
     const params = {
       projectName: process.env.BUILD_PROJECT_NAME,
-      sourceVersion: artifactData.VersionId
+      sourceVersion: artifactMetaData.VersionId
     };
     log.info('Triggering build with params', params);
-    codebuild.startBuild(params).promise();
+    return codebuild.startBuild(params).promise();
   }
 
   remove(stackName) {

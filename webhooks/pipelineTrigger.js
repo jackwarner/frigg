@@ -21,7 +21,7 @@ class PipelineTrigger {
   }
 
   send() {
-    if (!getTopic()) {
+    if (!this.getTopic()) {
       return Promise.resolve();
     } else {
       const params = {
