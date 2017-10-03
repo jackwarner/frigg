@@ -1,10 +1,10 @@
 'use strict';
-const fs = require('fs');
 const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const cf = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const codebuild = new AWS.CodeBuild({ apiVersion: '2016-10-06' });
+const fs = require('fs-extra');
 const Zip = require('../lib/zip');
 const log = require('../lib/log');
 
@@ -14,18 +14,46 @@ class Pipeline {
     log.info('Creating pipeline from config', config);
     this.config = config;
     this.templateDirectory = `pipelines/templates/${config.pipeline.name}/v${config.pipeline.version}`;
+    this.workingDirectory = '/tmp/pipeline';
   }
 
   deploy() {
     log.info('Deploying pipeline');
-    return this.createBuildArtifact()
+    return this.copyBuildArtifactTemplate()
+      .then(res => this.updateBuildArtifactProperties())
+      .then(res => this.createBuildArtifact())
       .then(artifact => this.uploadBuildArtifact(artifact))
       .then(artifactMetaData => this.triggerBuild(artifactMetaData));
   }
 
+  copyBuildArtifactTemplate() {
+    log.info(`Clearing existing pipeline templates from ${this.workingDirectory}`);
+    fs.removeSync(this.workingDirectory);
+    log.info(`Copying pipeline templates from ${this.templateDirectory} to ${this.workingDirectory}`);
+    fs.copySync(this.templateDirectory, this.workingDirectory);
+    return Promise.resolve();
+  }
+
+  updateBuildArtifactProperties() {
+    let buildspec = yaml.safeLoad(fs.readFileSync(`${this.workingDirectory}/buildspec.yml`, 'utf8'));
+    log.info('Parsed buildspec', buildspec);
+    buildspec.env.variables = {
+      STAGE: 'new placeholder',
+      PIPELINE_SERVICE_NAME: 'new placeholder',
+      REPO_NAME: 'new placeholder',
+      OWNER: 'new placeholder',
+      REPO: 'new placeholder',
+      BRANCH: 'new placeholder',
+      BUILD_STATUS_TOPIC: 'arn:aws:sns:us-east-1:109092357768:test',
+      GITHUB_TOKEN: 'new placeholder'
+    };
+    fs.writeFileSync(`${this.workingDirectory}/buildspec.yml`, buildspec, 'utf-8');
+    return Promise.resolve();
+  }
+
   createBuildArtifact() {
     log.info('Creating build artifact');
-    let zip = new Zip(this.templateDirectory);
+    let zip = new Zip(this.workingDirectory);
     return Promise.resolve(zip);
   }
 
