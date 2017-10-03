@@ -4,11 +4,10 @@ env:
   variables:
     STAGE: placeholder
     PIPELINE_SERVICE_NAME: placeholder
-    REPO_NAME: placeholder
     OWNER: placeholder
     REPO: placeholder
     BRANCH: placeholder
-    BUILD_STATUS_TOPIC: arn:aws:sns:us-east-1:109092357768:test
+    BUILD_STATUS_TOPIC: placeholder
     GITHUB_TOKEN: placeholder
 
 phases:

@@ -5,8 +5,10 @@ const cf = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const codebuild = new AWS.CodeBuild({ apiVersion: '2016-10-06' });
 const fs = require('fs-extra');
+const yaml = require('js-yaml');
 const Zip = require('../lib/zip');
 const log = require('../lib/log');
+const parameters = require('../lib/parameters');
 
 class Pipeline {
 
@@ -20,7 +22,8 @@ class Pipeline {
   deploy() {
     log.info('Deploying pipeline');
     return this.copyBuildArtifactTemplate()
-      .then(res => this.updateBuildArtifactProperties())
+      .then(res => parameters.getGitHubAccessToken())
+      .then(token => this.updateBuildArtifactProperties(token))
       .then(res => this.createBuildArtifact())
       .then(artifact => this.uploadBuildArtifact(artifact))
       .then(artifactMetaData => this.triggerBuild(artifactMetaData));
@@ -34,20 +37,22 @@ class Pipeline {
     return Promise.resolve();
   }
 
-  updateBuildArtifactProperties() {
+  updateBuildArtifactProperties(githubToken) {
     let buildspec = yaml.safeLoad(fs.readFileSync(`${this.workingDirectory}/buildspec.yml`, 'utf8'));
     log.info('Parsed buildspec', buildspec);
+    const repo = this.config.repository;
+    const pipeline = this.config.pipeline;
     buildspec.env.variables = {
-      STAGE: 'new placeholder',
-      PIPELINE_SERVICE_NAME: 'new placeholder',
-      REPO_NAME: 'new placeholder',
-      OWNER: 'new placeholder',
-      REPO: 'new placeholder',
-      BRANCH: 'new placeholder',
-      BUILD_STATUS_TOPIC: 'arn:aws:sns:us-east-1:109092357768:test',
-      GITHUB_TOKEN: 'new placeholder'
+      STAGE: pipeline.stage,
+      PIPELINE_SERVICE_NAME: pipeline.serviceName,
+      OWNER: repo.owner,
+      REPO: repo.name,
+      BRANCH: repo.branch,
+      BUILD_STATUS_TOPIC: process.env.PIPELINE_ADDED,
+      GITHUB_TOKEN: githubToken
     };
-    fs.writeFileSync(`${this.workingDirectory}/buildspec.yml`, buildspec, 'utf-8');
+    log.info('Writing new buildspec', buildspec);
+    fs.writeFileSync(`${this.workingDirectory}/buildspec.yml`, yaml.safeDump(buildspec), 'utf-8');
     return Promise.resolve();
   }
 
