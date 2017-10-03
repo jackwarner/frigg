@@ -9,6 +9,7 @@ provider:
   name: aws
   runtime: nodejs6.10
   stage: local
+  profile: personal
   environment:
     LOG_LEVEL:
       Fn::FindInMap: [ LogLevel, '${opt:stage, self:provider.stage}', level ]

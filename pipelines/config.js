@@ -29,22 +29,6 @@ class Config {
       .then(token => this.configureGitHub(token))
       .then(github => this.getConfig(github))
       .then(config => this.setConfig(config));
-
-    // const github = new GitHub({ token: process.env.GITHUB_TOKEN });
-    // let repository = github.getRepo(this.repository.owner, this.repository.name);
-    // return new Promise( (resolve, reject) => {
-    //   repository.getContents(this.repository.branch, 'frigg.yml', true, (err, data) => {
-    //     if (err) {
-    //       log.error('Error getting frigg config from repository', err);
-    //       reject(err);
-    //     } else {
-    //       log.info('Got frigg config', data);
-    //       let config = yaml.safeLoad(data);
-    //       pipeline = Object.assign(pipeline, config.pipeline);
-    //       resolve(config);
-    //     }
-    //   });
-    // });
   }
 
   configureGitHub(githubToken) {
@@ -53,10 +37,11 @@ class Config {
   }
 
   getConfig(github) {
-    log.info('this.repository.owner', this.repository.owner)
-    let repository = github.getRepo(this.repository.owner, this.repository.name);
+    const repo = this.repository;
+    log.info('Getting frigg config for repository', repo)
+    let remote = github.getRepo(repo.owner, repo.name);
     return new Promise( (resolve, reject) => {
-      repository.getContents(this.repository.branch, 'frigg.yml', true, (err, data) => {
+      remote.getContents(repo.branch, 'frigg.yml', true, (err, data) => {
         if (err) {
           log.error('Error getting frigg config from repository', err);
           reject(err);
