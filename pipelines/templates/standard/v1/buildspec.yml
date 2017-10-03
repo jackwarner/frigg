@@ -8,6 +8,8 @@ env:
     OWNER: placeholder
     REPO: placeholder
     BRANCH: placeholder
+    BUILD_STATUS_TOPIC: arn:aws:sns:us-east-1:109092357768:test
+    GITHUB_TOKEN: placeholder
 
 phases:
   install:
@@ -25,5 +27,6 @@ phases:
 
   post_build:
     commands:
-      - echo "build completed"
+      # - echo "build completed"
       # call to frigg and notify of build status
+      - aws sns publish --topic-arn $BUILD_STATUS_TOPIC --message "{"buildStatus":"$CODEBUILD_BUILD_SUCCEEDING"}"

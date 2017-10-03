@@ -26,9 +26,9 @@ class Config {
   loadConfig() {
     log.info('Getting frigg config properties');
     return parameters.getGitHubAccessToken()
-      .then(configureGitHub)
-      .then(loadConfig)
-      .then(setConfig);
+      .then(token => this.configureGitHub(token))
+      .then(github => this.getConfig(github))
+      .then(config => this.setConfig(config));
 
     // const github = new GitHub({ token: process.env.GITHUB_TOKEN });
     // let repository = github.getRepo(this.repository.owner, this.repository.name);

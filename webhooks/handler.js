@@ -10,7 +10,7 @@ module.exports.github = (event, context, callback) => {
   } else {
     validator.validate()
       .then(res => new PipelineTrigger(event))
-      .then(pipelineTrigger => pipelineTrigger.send())
+      .then(trigger => trigger.send())
       .then(res => sendSuccess(callback))
       .catch(err => sendError(callback, err));
   }
