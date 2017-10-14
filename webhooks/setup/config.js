@@ -18,6 +18,7 @@ class Config {
   }
 
   get() {
+    log.info('Starting the get method');
     const params = {
       Bucket: process.env.FRIGG_CONFIG_BUCKET,
       Key: CONFIG_KEY
