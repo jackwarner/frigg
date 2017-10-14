@@ -13,8 +13,19 @@ provider:
 
 functions:
 
-  HandleWebhook:
-    handler: webhooks/handler.github
+  ConfigureGitHubWebhook:
+    handler: webhooks/setup/configure.github
+    role: DeployRole
+    environment:
+      WEBHOOK_HANDLER_URL: { Fn::Join : [ '', [ 'https://', { 'Ref' : ApiGatewayRestApi }, '.execute-api.', { 'Ref' : 'AWS::Region' }, '.amazonaws.com/${opt:stage, self:provider.stage}/github' ] ] }
+      GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
+      FRIGG_CONFIG_BUCKET: { Ref: FriggConfig }
+      # TODO extract this into a list of orgs in a config
+      # TODO include whitelist and blacklist for repositories within org
+      GITHUB_ORGANIZATION: santaswap
+
+  WebhookMessageHandler:
+    handler: webhooks/messages/handler.github
     role: SNSRole
     events:
       - http:
@@ -26,14 +37,6 @@ functions:
       REMOVE_PIPELINE_TOPIC: { Ref: 'SNSTopicRemovepipeline${opt:stage, self:provider.stage}' }
       REMOVE_REPOSITORY_PIPELINES_TOPIC: { Ref: 'SNSTopicRemoverepositorypipelines${opt:stage, self:provider.stage}' }
       GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
-
-  ManageWebhook:
-    handler: webhooks/github.manage
-    role: DeployRole
-    environment:
-      WEBHOOK_HANDLER_URL: { Fn::Join : [ '', [ 'https://', { 'Ref' : ApiGatewayRestApi }, '.execute-api.', { 'Ref' : 'AWS::Region' }, '.amazonaws.com/${opt:stage, self:provider.stage}/github' ] ] }
-      GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
-      FRIGG_CONFIG_BUCKET: { Ref: FriggConfig }
 
   UpsertPipeline:
     handler: pipelines/handler.upsert
@@ -49,7 +52,7 @@ functions:
     role: DeployRole
     events: [ sns: 'remove-pipeline-${opt:stage, self:provider.stage}' ]
     environment:
-      ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
+      ODIN_REMOVE_STACK_TOPIC: hello #${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
       PIPELINE_REMOVED_TOPIC: { Ref: 'SNSTopicPipelineremoved${opt:stage, self:provider.stage}' }
 
   RemoveRepositoryPipelines:
@@ -57,7 +60,7 @@ functions:
     role: DeployRole
     events: [ sns: 'remove-repository-pipelines-${opt:stage, self:provider.stage}' ]
     environment:
-      ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
+      ODIN_REMOVE_STACK_TOPIC: hello #${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
       PIPELINE_REMOVED_TOPIC: { Ref: 'SNSTopicPipelineremoved${opt:stage, self:provider.stage}' }
 
   SavePipelineStatus:
@@ -97,6 +100,8 @@ resources:
       test:
         level: debug
       local:
+        level: debug
+      dev:
         level: debug
       automation:
         level: info
@@ -139,13 +144,13 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
 
-    ManageWebhookCustomResource:
-      Type: Custom::ManageWebhook
+    ConfigureGitHubWebhookCustomResource:
+      Type: Custom::ConfigureGitHubWebhook
       Version: 1.0
       # TODO figure out which of these is latest and only depend on it
-      DependsOn: [ ApiGatewayRestApi, ApiGatewayMethodGithubPost, ApiGatewayResourceGithub, HandleWebhookLambdaFunction, HandleWebhookLambdaPermissionApiGateway ]
+      DependsOn: [ ApiGatewayRestApi, ApiGatewayMethodGithubPost, ApiGatewayResourceGithub, WebhookMessageHandlerLambdaFunction, WebhookMessageHandlerLambdaPermissionApiGateway ]
       Properties:
-        ServiceToken: { Fn::GetAtt: [ ManageWebhookLambdaFunction, Arn ] }
+        ServiceToken: { Fn::GetAtt: [ ConfigureGitHubWebhookLambdaFunction, Arn ] }
         GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
 
     FriggConfig:

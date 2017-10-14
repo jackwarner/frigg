@@ -1,7 +1,7 @@
 'use strict';
 const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
-const log = require('../lib/log');
+const log = require('../../lib/log');
 
 class PipelineTrigger {
   constructor(event) {

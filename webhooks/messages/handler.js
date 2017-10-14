@@ -1,7 +1,7 @@
 'use strict';
 const PipelineTrigger = require('./pipelineTrigger');
 const Validator = require('./validator');
-const log = require('../lib/log');
+const log = require('../../lib/log');
 
 module.exports.github = (event, context, callback) => {
   const validator = new Validator(event);

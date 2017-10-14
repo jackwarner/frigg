@@ -1,6 +1,6 @@
 'use strict';
 const crypto = require('crypto');
-const log = require('../lib/log');
+const log = require('../../lib/log');
 
 class Validator {
   constructor(event) {

@@ -58,6 +58,6 @@ class Build {
     }
   }
 
-}
+};
 
 module.exports = Build;
