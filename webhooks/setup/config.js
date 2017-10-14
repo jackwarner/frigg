@@ -27,7 +27,7 @@ class Config {
   }
 
   emptyBucket() {
-    return listBucketObjects().then(deleteObjects);
+    return this.listBucketObjects().then(res => this.deleteObjects(res.Contents));
   }
 
   listBucketObjects() {
@@ -40,7 +40,7 @@ class Config {
     const params = {
       Bucket: process.env.FRIGG_CONFIG_BUCKET,
       Delete: {
-        Objects: objects.Contents.map( object => { return { Key: object.Key } })
+        Objects: objects.map( object => { return { Key: object.Key } })
       }
     };
     log.debug('Deleting objects with params', params);
