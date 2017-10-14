@@ -1,13 +1,12 @@
 'use strict';
 const Webhook = require('./webhook');
-const cf = require('../../lib/cloudformation');
-const log = require('../../lib/log');
+const cf = require('../../utils/cloudformation');
+const log = require('../../utils/log');
 
 const CONFIG_KEY = 'github-webhook-config.json';
 
 module.exports.github = (event, context) => {
-  log.info('Receiving event for github configuration', event);
-  log.info('Request type', event.RequestType);
+  log.debug('Received event to configure github webhook', event);
 
   let webhook = new Webhook(event);
   webhook.configure()

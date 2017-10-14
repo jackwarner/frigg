@@ -1,7 +1,7 @@
 'use strict';
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const log = require('../../lib/log');
+const log = require('../../utils/log');
 
 const CONFIG_KEY = 'github-webhook-config.json';
 

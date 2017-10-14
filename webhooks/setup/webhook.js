@@ -1,12 +1,13 @@
 'use strict';
 const GitHubApi = require('github');
 const Config = require('./config');
-const parameters = require('../../lib/parameters');
-const log = require('../../lib/log');
+const parameters = require('../../utils/parameters');
+const log = require('../../utils/log');
 
 class Webhook {
 
     constructor(event) {
+      log.debug('Creating webhook class from event', event);
       this.event = event;
       this.requestType = event.RequestType;
       this.GITHUB_WEBHOOK_SECRET = event.GITHUB_WEBHOOK_SECRET;
@@ -41,7 +42,7 @@ class Webhook {
     }
     
     remove() {
-      log.info('Removing webhook');
+      log.info('Starting remove webhook process');
       let config = new Config();
       return Promise.all([config.get(), parameters.getGitHubAccessToken()])
         .then(res => {
@@ -84,7 +85,7 @@ class Webhook {
     }
 
     register() {
-      log.info('Registering webhook');
+      log.info('Starting register webhook process');
       let config = new Config();
       return parameters.getGitHubAccessToken()
         .then(githubToken => this.doRegister(githubToken))
@@ -110,13 +111,13 @@ class Webhook {
           },
           events: [ 'delete', 'create', 'push', 'repository' ]
         };
-        log.info('Creating webhook with params', params);
+        log.info('Registering webhook with params', params);
         github.orgs.createHook(params, (err, res) => {
           if (err) {
-            log.error('Error creating webhook', err);
+            log.error('Error registering webhook', err);
             reject(err);
           } else {
-            log.info('Successfully created webhook', res)
+            log.info('Successfully registered webhook', res)
             resolve(res);
           }
         });
@@ -124,7 +125,7 @@ class Webhook {
     }
 
     update() {
-      log.info('Updating webhook');
+      log.info('Staring update webhook process');
       let config = new Config();
       return Promise.all([config.get(), parameters.getGitHubAccessToken()])
         .then(res => {

@@ -1,11 +1,11 @@
 'use strict';
 const crypto = require('crypto');
-const log = require('../../lib/log');
+const log = require('../../utils/log');
 
 class Validator {
   constructor(event) {
     this.headers = event.headers;
-    this.bodyString = event.body;
+    this.bodyString = JSON.stringify(event.body);
     this.secret = process.env.GITHUB_WEBHOOK_SECRET;
   }
 
@@ -18,11 +18,6 @@ class Validator {
       log.info('Event not a valid GitHub event, rejecting');
       return Promise.reject(new Error('Event isn\'t valid'));
     }
-  }
-
-  isPing() {
-    log.info('Checking to see if event is ping');
-    return this.headers['X-GitHub-Event'] === 'ping';
   }
 
   hasValidHeaders() {

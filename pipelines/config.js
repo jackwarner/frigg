@@ -1,8 +1,8 @@
 'use strict';
 const yaml = require('js-yaml');
 const GitHub = require('github-api');
-const parameters = require('../lib/parameters');
-const log = require('../lib/log');
+const parameters = require('../utils/parameters');
+const log = require('../utils/log');
 
 class Config {
   constructor(repository) {

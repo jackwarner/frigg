@@ -1,7 +1,7 @@
 'use strict';
 const AWS = require('aws-sdk');
 const docs = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10' });
-const log = require('../lib/log');
+const log = require('../utils/log');
 
 class Pipeline {
 

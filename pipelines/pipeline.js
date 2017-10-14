@@ -6,9 +6,9 @@ const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const codebuild = new AWS.CodeBuild({ apiVersion: '2016-10-06' });
 const fs = require('fs-extra');
 const yaml = require('js-yaml');
-const Zip = require('../lib/zip');
-const log = require('../lib/log');
-const parameters = require('../lib/parameters');
+const Zip = require('../utils/zip');
+const log = require('../utils/log');
+const parameters = require('../utils/parameters');
 
 class Pipeline {
 
