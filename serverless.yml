@@ -24,6 +24,12 @@ functions:
       # TODO include whitelist and blacklist for repositories within org
       GITHUB_ORGANIZATION: santaswap
 
+  # TODO create a pipeline for frigg to update itself
+  # DogFoodFrigg:
+  #   handler: 
+  #   role: 
+  #   environment:
+
   ProcessGitHubWebhook:
     handler: webhooks/messages/process.github
     role: PublishRole
