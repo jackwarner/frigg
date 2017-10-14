@@ -5,9 +5,9 @@ const log = require('../../utils/log');
 
 const CONFIG_FILE = 'frigg.yml'
 
-class PipelineTrigger {
+class PipelineEvent {
   constructor(event) {
-    log.info(`Instantiating pipeline trigger from event`, event);
+    log.info(`Creating new pipeline event from github event`, event);
     
     this.configFile = CONFIG_FILE;
     this.body = event.body;
@@ -18,21 +18,25 @@ class PipelineTrigger {
     this.showIfEventHandled();
   }
 
+  handle() {
+    if (this.isRelevant()) {
+      return this.send();
+    } else {
+      return Promise.resolve('Not a relevant pipeline event');
+    }
+  }
+
   isRelevant() {
     return getTopic();
   }
 
   send() {
-    if (!this.getTopic()) {
-      return Promise.resolve();
-    } else {
-      const params = {
-        Message: this.getMessage(),
-        TopicArn: this.getTopic()
-      };
-      log.info('Sending pipeline event with params', params);
-      return sns.publish(params).promise();
-    }
+    const params = {
+      Message: this.getMessage(),
+      TopicArn: this.getTopic()
+    };
+    log.info('Sending pipeline event with params', params);
+    return sns.publish(params).promise();
   }
 
   getMessage() {
@@ -56,7 +60,7 @@ class PipelineTrigger {
       log.info('Create or update action, upserting pipeline');
       return process.env.UPSERT_PIPELINE_TOPIC;
     } else if (this.isRemoveBranchAction()) {
-      log.info('Remove or delete action, removing pipeline');
+      log.info('Remove or delete branch action, removing pipeline');
       return process.env.REMOVE_PIPELINE_TOPIC;
     } else if (this.isRemoveRepositoryAction()) {
       log.info('Remove repository action, removing all pipelines')
@@ -190,4 +194,4 @@ class PipelineTrigger {
 
 };
 
-module.exports = PipelineTrigger;
+module.exports = PipelineEvent;

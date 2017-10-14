@@ -4,27 +4,24 @@ const log = require('../../utils/log');
 
 class Validator {
   constructor(event) {
+    log.debug('Creating new validator for github event', event);
     this.headers = event.headers;
     this.bodyString = JSON.stringify(event.body);
     this.secret = process.env.GITHUB_WEBHOOK_SECRET;
   }
 
-  validate() {
+  isValid() {
     log.info('Checking to see if event is valid');
-    if (this.hasValidHeaders() && this.hasValidSignature()) {
-      log.info('Event is valid');
-      return Promise.resolve();
-    } else {
-      log.info('Event not a valid GitHub event, rejecting');
-      return Promise.reject(new Error('Event isn\'t valid'));
-    }
+    const isValid = this.hasValidHeaders() && this.hasValidSignature();
+    log.info(`Event ${ isValid ? 'is' : 'isn\'t' } valid`);
+    return isValid;
   }
 
   hasValidHeaders() {
     const validHeaders = this.headers['X-Hub-Signature']
                     && this.headers['X-GitHub-Event']
                     && this.headers['X-GitHub-Delivery'];
-    log.info('Has valid headers:', validHeaders);
+    log.info('Event has valid headers', validHeaders);
     return validHeaders;
   }
 
@@ -34,7 +31,7 @@ class Validator {
     log.info('Supplied signature', this.headers['X-Hub-Signature']);
     log.info('Computed signature', signature);
     const validSignature = this.headers['X-Hub-Signature'] === signature;
-    log.info('Has valid signature', validSignature);
+    log.info('Event has valid signature', validSignature);
     return validSignature;
   }
 
