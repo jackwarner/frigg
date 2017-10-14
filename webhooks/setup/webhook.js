@@ -28,6 +28,18 @@ class Webhook {
       return this.requestType === 'Delete' && process.env.GITHUB_WEBHOOK_SECRET === this.GITHUB_WEBHOOK_SECRET;
     }
     
+    shouldDoNothing() {
+      return this.requestType === 'Delete' && process.env.GITHUB_WEBHOOK_SECRET !== this.GITHUB_WEBHOOK_SECRET;
+    }
+    
+    shouldRegister() {
+      return this.requestType === 'Create';
+    }
+    
+    shouldUpdate() {
+      return this.requestType === 'Update';
+    }
+    
     remove() {
       log.info('Removing webhook');
       let config = new Config();
@@ -66,17 +78,9 @@ class Webhook {
       });
     }
 
-    shouldDoNothing() {
-      return this.requestType === 'Delete' && process.env.GITHUB_WEBHOOK_SECRET !== this.GITHUB_WEBHOOK_SECRET;
-    }
-
     doNothing() {
       log.info('Not doing anything to webhook');
       return this.reportStatus();
-    }
-    
-    shouldRegister() {
-      return this.requestType === 'Create';
     }
 
     register() {
@@ -117,10 +121,6 @@ class Webhook {
           }
         });
       });
-    }
-
-    shouldUpdate() {
-      return this.requestType === 'Update';
     }
 
     update() {
