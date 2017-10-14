@@ -15,7 +15,7 @@ functions:
 
   ConfigureGitHubWebhook:
     handler: webhooks/setup/configure.github
-    role: S3Role
+    role: ConfigureRole
     environment:
       WEBHOOK_HANDLER_URL: { Fn::Join : [ '', [ 'https://', { 'Ref' : ApiGatewayRestApi }, '.execute-api.', { 'Ref' : 'AWS::Region' }, '.amazonaws.com/${opt:stage, self:provider.stage}/github' ] ] }
       GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
@@ -26,7 +26,7 @@ functions:
 
   ProcessGitHubWebhook:
     handler: webhooks/messages/process.github
-    role: SNSRole
+    role: PublishRole
     events:
       - http:
           path: github
@@ -65,14 +65,14 @@ functions:
 
   SavePipelineStatus:
     handler: status/handler.pipelineAdded
-    role: DynamoRole
+    role: TableRole
     events: [ sns: 'pipeline-added-${opt:stage, self:provider.stage}' ]
     environment:
       PIPELINES_TABLE: { Ref: PipelinesTable }
 
   RemovePipelineStatus:
     handler: status/handler.pipelineRemoved
-    role: DynamoRole
+    role: TableRole
     events: [ sns: 'pipeline-removed-${opt:stage, self:provider.stage}' ]
     environment:
       PIPELINES_TABLE: { Ref: PipelinesTable }
@@ -80,14 +80,14 @@ functions:
 
   SaveBuildStartedStatus:
     handler: status/handler.buildStarted
-    role: DynamoRole
+    role: TableRole
     events: [ sns: 'build-started-${opt:stage, self:provider.stage}' ]
     environment:
       BUILDS_TABLE: { Ref: BuildsTable }
 
   SaveBuildFinishedStatus:
     handler: status/handler.buildFinished
-    role: DynamoRole
+    role: TableRole
     events: [ sns: 'build-finished-${opt:stage, self:provider.stage}' ]
     environment:
       BUILDS_TABLE: { Ref: BuildsTable }
@@ -203,7 +203,7 @@ resources:
                   Action: '*'
                   Resource: '*'
 
-    SNSRole:
+    PublishRole:
       Type: AWS::IAM::Role
       Properties:
         AssumeRolePolicyDocument:
@@ -222,7 +222,7 @@ resources:
                 Action: sns:Publish
                 Resource: { Fn::Join : [ ':', [ 'arn:aws:sns', { 'Ref' : AWS::Region }, { 'Ref' : AWS::AccountId }, '*' ] ] }
 
-    DynamoRole:
+    TableRole:
       Type: AWS::IAM::Role
       Properties:
         AssumeRolePolicyDocument:
@@ -241,7 +241,7 @@ resources:
                 Action: dynamodb:*
                 Resource: { Fn::Join : [ ':', [ 'arn:aws:dynamodb', { 'Ref' : AWS::Region }, { 'Ref' : AWS::AccountId }, '*' ] ] }
 
-    S3Role:
+    ConfigRole:
       Type: AWS::IAM::Role
       Properties:
         AssumeRolePolicyDocument:
@@ -259,6 +259,9 @@ resources:
               - Effect: Allow
                 Action: s3:*
                 Resource: { Fn::Join : [ ':', [ 'arn:aws:s3', '', '', '*' ] ] }
+              - Effect: Allow
+                Action: ssm:*
+                Resource: { Fn::Join : [ ':', [ 'arn:aws:ssm', { 'Ref' : AWS::Region }, { 'Ref' : AWS::AccountId }, '*' ] ] }
 
     DeployRole:
       Type: AWS::IAM::Role
