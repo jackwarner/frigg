@@ -48,7 +48,7 @@ class Pipeline {
       OWNER: repo.owner,
       REPO: repo.name,
       BRANCH: repo.branch,
-      BUILD_STATUS_TOPIC: process.env.PIPELINE_ADDED,
+      BUILD_STATUS_TOPIC: process.env.PIPELINE_ADDED_TOPIC,
       GITHUB_TOKEN: githubToken
     };
     log.info('Writing new buildspec', buildspec);
@@ -132,7 +132,7 @@ class Pipeline {
         repository: this.config.repository,
         pipeline: this.config.pipeline
       }),
-      TopicArn: process.env.PIPELINE_ADDED
+      TopicArn: process.env.PIPELINE_ADDED_TOPIC
     };
     log.info('Sending pipeline added event with params', params);
     return sns.publish(params).promise();
@@ -145,7 +145,7 @@ class Pipeline {
         repository: this.config.repository,
         pipeline: this.config.pipeline
       }),
-      TopicArn: process.env.PIPELINE_REMOVED
+      TopicArn: process.env.PIPELINE_REMOVED_TOPIC
     };
     log.info('Sending pipeline removed event with params', params);
     return sns.publish(params).promise();

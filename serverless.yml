@@ -1,8 +1,6 @@
 service: frigg
 
 custom:
-  buildsTable:
-    indexName: repository-branch
   webhookSecret: ${file(./lib/parameters.js):generateWebhookSecret}
 
 provider:
@@ -11,24 +9,13 @@ provider:
   stage: local
   profile: personal
   environment:
-    LOG_LEVEL:
-      Fn::FindInMap: [ LogLevel, '${opt:stage, self:provider.stage}', level ]
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - sns:Publish
-      Resource:
-        Fn::Join:
-          - ':'
-          - - 'arn:aws:sns'
-            - Ref: AWS::Region
-            - Ref: AWS::AccountId
-            - '*'
+    LOG_LEVEL: { Fn::FindInMap: [ LogLevel, '${opt:stage, self:provider.stage}', level ] }
 
 functions:
 
   HandleWebhook:
     handler: webhooks/handler.github
+    role: SNSRole
     events:
       - http:
           path: github
@@ -42,75 +29,65 @@ functions:
 
   ManageWebhook:
     handler: webhooks/github.manage
+    role: DeployRole
     environment:
-      WEBHOOK_HANDLER_URL: { 'Fn::Join' : ['', [ 'https://', { 'Ref' : ApiGatewayRestApi }, '.execute-api.', { 'Ref' : 'AWS::Region' }, '.amazonaws.com/${opt:stage, self:provider.stage}/github' ] ] }
+      WEBHOOK_HANDLER_URL: { Fn::Join : [ '', [ 'https://', { 'Ref' : ApiGatewayRestApi }, '.execute-api.', { 'Ref' : 'AWS::Region' }, '.amazonaws.com/${opt:stage, self:provider.stage}/github' ] ] }
       GITHUB_WEBHOOK_SECRET: ${self:custom.webhookSecret}
       FRIGG_CONFIG_BUCKET: { Ref: FriggConfig }
-    role: ServerlessAdminRole # Admin role needed for deploying serverless applications
 
   UpsertPipeline:
     handler: pipelines/handler.upsert
-    timeout: 300 # 5 minutes
-    events:
-      - sns: upsert-pipeline-${opt:stage, self:provider.stage}
+    role: DeployRole
+    events: [ sns: 'upsert-pipeline-${opt:stage, self:provider.stage}' ]
     environment:
-      PIPELINE_ADDED: { Ref: 'SNSTopicPipelineadded${opt:stage, self:provider.stage}' }
+      PIPELINE_ADDED_TOPIC: { Ref: 'SNSTopicPipelineadded${opt:stage, self:provider.stage}' }
       BUILD_ARTIFACT_BUCKET: { Ref: BuildArtifacts }
       BUILD_PROJECT_NAME: { Ref: CodeBuild }
-    # update role - only need to upload s3 and trigger code build
-    role: ServerlessAdminRole # Admin role needed for deploying serverless applications
 
   RemovePipeline:
     handler: pipelines/handler.removePipeline
-    events:
-      - sns: remove-pipeline-${opt:stage, self:provider.stage}
+    role: DeployRole
+    events: [ sns: 'remove-pipeline-${opt:stage, self:provider.stage}' ]
     environment:
       ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
-      PIPELINE_REMOVED: { Ref: 'SNSTopicPipelineremoved${opt:stage, self:provider.stage}' }
-    role: ServerlessAdminRole # Admin role needed for removing serverless applications
+      PIPELINE_REMOVED_TOPIC: { Ref: 'SNSTopicPipelineremoved${opt:stage, self:provider.stage}' }
 
   RemoveRepositoryPipelines:
     handler: pipelines/handler.removeRepository
-    events:
-      - sns: remove-repository-pipelines-${opt:stage, self:provider.stage}
+    role: DeployRole
+    events: [ sns: 'remove-repository-pipelines-${opt:stage, self:provider.stage}' ]
     environment:
       ODIN_REMOVE_STACK_TOPIC: ${cf:odin-${opt:stage, self:provider.stage}.DeleteStackSNS}
-      PIPELINE_REMOVED: { Ref: 'SNSTopicPipelineremoved${opt:stage, self:provider.stage}' }
-    role: ServerlessAdminRole # Admin role needed for removing serverless applications
+      PIPELINE_REMOVED_TOPIC: { Ref: 'SNSTopicPipelineremoved${opt:stage, self:provider.stage}' }
 
   SavePipelineStatus:
     handler: status/handler.pipelineAdded
-    events:
-      - sns: pipeline-added-${opt:stage, self:provider.stage}
+    role: DynamoRole
+    events: [ sns: 'pipeline-added-${opt:stage, self:provider.stage}' ]
     environment:
       PIPELINES_TABLE: { Ref: PipelinesTable }
-    role: ServerlessAdminRole # Admin role not needed, change this
 
   RemovePipelineStatus:
     handler: status/handler.pipelineRemoved
-    events:
-      - sns: pipeline-removed-${opt:stage, self:provider.stage}
+    role: DynamoRole
+    events: [ sns: 'pipeline-removed-${opt:stage, self:provider.stage}' ]
     environment:
       PIPELINES_TABLE: { Ref: PipelinesTable }
       BUILDS_TABLE: { Ref: BuildsTable }
-    role: ServerlessAdminRole # Admin role not needed, change this
 
   SaveBuildStartedStatus:
     handler: status/handler.buildStarted
-    events:
-      - sns: build-started-${opt:stage, self:provider.stage} 
+    role: DynamoRole
+    events: [ sns: 'build-started-${opt:stage, self:provider.stage}' ]
     environment:
       BUILDS_TABLE: { Ref: BuildsTable }
-    role: ServerlessAdminRole # Admin role not needed, change this
 
   SaveBuildFinishedStatus:
     handler: status/handler.buildFinished
-    events:
-      - sns: build-finished-${opt:stage, self:provider.stage} 
+    role: DynamoRole
+    events: [ sns: 'build-finished-${opt:stage, self:provider.stage}' ]
     environment:
       BUILDS_TABLE: { Ref: BuildsTable }
-    role: ServerlessAdminRole # Admin role not needed, change this
-
 
 resources:
   Description: Automated service for managing CodePipelines for repos & branches inside a GitHub organization
@@ -127,37 +104,17 @@ resources:
         level: info
   
   Resources:
-
-    ServerlessAdminRole:
-      Type: AWS::IAM::Role
-      Properties:
-        AssumeRolePolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service:
-                  - lambda.amazonaws.com
-              Action: sts:AssumeRole
-        Policies:
-          - PolicyName: FriggAdminDeployAccess-${opt:stage, self:provider.stage}
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement: 
-                - Effect: Allow
-                  Action: '*'
-                  Resource: '*'
     
     PipelinesTable:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: 'owner/repository'
+          - AttributeName: owner/repository
             AttributeType: S
           - AttributeName: branch
             AttributeType: S
         KeySchema:
-          - AttributeName: 'owner/repository'
+          - AttributeName: owner/repository
             KeyType: HASH
           - AttributeName: branch
             KeyType: RANGE
@@ -169,12 +126,12 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: 'owner/repository/branch'
+          - AttributeName: owner/repository/branch
             AttributeType: S
           - AttributeName: timestamp
             AttributeType: S
         KeySchema:
-          - AttributeName: 'owner/repository/branch'
+          - AttributeName: owner/repository/branch
             KeyType: HASH
           - AttributeName: timestamp
             KeyType: RANGE
@@ -207,7 +164,7 @@ resources:
         Description: 'CodeBuild used by Frigg in the ${opt:stage, self:provider.stage} environment to deploy pipelines for other projects'
         Source:
           Type: S3
-          Location: { 'Fn::Join' : ['/', [ { 'Ref' : BuildArtifacts }, 'build.zip' ] ] }
+          Location: { Fn::Join : [ /, [ { 'Ref' : BuildArtifacts }, 'build.zip' ] ] }
         Environment:
           Image: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
           Type: LINUX_CONTAINER
@@ -226,12 +183,7 @@ resources:
             - Action: sts:AssumeRole
               Effect: Allow
               Principal:
-                AWS:
-                  Fn::Join:
-                    - ''
-                    - - 'arn:aws:iam::'
-                      - Ref: AWS::AccountId
-                      - :root
+                AWS: { Fn::Join : [ ':', [ 'arn:aws:iam:', { 'Ref' : AWS::AccountId }, 'root' ] ] }
             - Action: sts:AssumeRole
               Effect: Allow
               Principal:
@@ -242,6 +194,63 @@ resources:
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
+                - Effect: Allow
+                  Action: '*'
+                  Resource: '*'
+
+    SNSRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: [ lambda.amazonaws.com ]
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: FriggSNSAccess-${opt:stage, self:provider.stage}
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: { Fn::Join : [ ':', [ 'arn:aws:sns', { 'Ref' : AWS::Region }, { 'Ref' : AWS::AccountId }, '*' ] ] }
+
+    DynamoRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: [ lambda.amazonaws.com ]
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: FriggDynamoAccess-${opt:stage, self:provider.stage}
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+              - Effect: Allow
+                Action: dynamodb:*
+                Resource: { Fn::Join : [ ':', [ 'arn:aws:dynamodb', { 'Ref' : AWS::Region }, { 'Ref' : AWS::AccountId }, '*' ] ] }
+
+    DeployRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: [ lambda.amazonaws.com ]
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: FriggDeployAccess-${opt:stage, self:provider.stage}
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement: 
                 - Effect: Allow
                   Action: '*'
                   Resource: '*'
