@@ -52,10 +52,13 @@ class Webhook {
         .then(res => config.emptyBucket())
         .then(res => this.reportStatus())
         // Don't put the entire stack in a bad state due to a failed delete or update elsewhere
-        .catch(err => this.reportStatus());
+        .catch(err => {
+          log.info('Error removing webhook', err);
+          return this.reportStatus()
+        });
     }
 
-    doRemove(config, githubToken) {
+    doRemove(configuration, githubToken) {
       return new Promise( (resolve, reject) => {
         const github = new GitHubApi();
         github.authenticate({
@@ -64,7 +67,7 @@ class Webhook {
         });
         const params = {
           org: process.env.GITHUB_ORGANIZATION,
-          id: config.data.id,
+          id: configuration.data.id,
         };
         log.info('Removing webhook with params', params);
         github.orgs.deleteHook(params, (err, res) => {
@@ -125,18 +128,24 @@ class Webhook {
     }
 
     update() {
-      log.info('Staring update webhook process');
+      log.info('Starting update webhook process');
       let config = new Config();
       return Promise.all([config.get(), parameters.getGitHubAccessToken()])
         .then(res => {
           const configuration = res[0], githubToken = res[1];
           return this.doUpdate(configuration, githubToken);
-        }).then(res => this.reportStatus())
+        })
+        .then(res => this.reportStatus())
         // Don't put the entire stack in a bad state due to a failed delete or update elsewhere
-        .catch(err => this.reportStatus());
+        .catch(err => {
+          log.info('Error updating webhook', err);
+          return this.reportStatus();
+        });
     }
 
-    doUpdate(config, githubToken) {
+    doUpdate(configuration, githubToken) {
+      log.info('Configuration', configuration);
+      log.info('githubToken', githubToken);
       return new Promise( (resolve, reject) => {
         const github = new GitHubApi();
         github.authenticate({
@@ -145,7 +154,7 @@ class Webhook {
         });
         const params = {
           org: process.env.GITHUB_ORGANIZATION,
-          id: config.data.id,
+          id: configuration.data.id,
           config: {
             url: process.env.WEBHOOK_HANDLER_URL,
             secret: process.env.GITHUB_WEBHOOK_SECRET,

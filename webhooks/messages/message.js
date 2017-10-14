@@ -1,5 +1,5 @@
 'use strict';
-const validator = require('./validator');
+const Validator = require('./validator');
 const PipelineEvent = require('./pipelineEvent');
 const log = require('../../utils/log');
 

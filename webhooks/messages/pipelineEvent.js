@@ -27,7 +27,7 @@ class PipelineEvent {
   }
 
   isRelevant() {
-    return getTopic();
+    return this.getTopic();
   }
 
   send() {

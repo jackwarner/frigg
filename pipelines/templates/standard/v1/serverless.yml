@@ -85,6 +85,8 @@ resources:
               Value: ${env:STAGE}
             - Name: REPO
               Value: ${env:REPO}
+            - Name: OWNER
+              Value: ${env:OWNER}
         Artifacts:
           Type: CODEPIPELINE
         ServiceRole: { Ref: CodeBuildRole }

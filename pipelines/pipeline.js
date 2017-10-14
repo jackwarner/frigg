@@ -31,7 +31,7 @@ class Pipeline {
 
   copyBuildArtifactTemplate() {
     log.info(`Clearing existing pipeline templates from ${this.workingDirectory}`);
-    fs.removeSync(this.workingDirectory);
+    fs.emptyDirSync(this.workingDirectory);
     log.info(`Copying pipeline templates from ${this.templateDirectory} to ${this.workingDirectory}`);
     fs.copySync(this.templateDirectory, this.workingDirectory);
     return Promise.resolve();
@@ -64,7 +64,7 @@ class Pipeline {
 
   uploadBuildArtifact(zip) {
     const params = {
-      Body: zip.toBuffer(),
+      Body: zip, //zip.toBuffer(),
       Bucket: process.env.BUILD_ARTIFACT_BUCKET,
       Key: 'build.zip'
     };

@@ -15,7 +15,7 @@ class Pipeline {
       TableName: process.env.PIPELINES_TABLE,
       Item: this.getItem()
     };
-    console.log('Creating pipeline with params', params);
+    log.info('Creating pipeline with params', params);
     return new Promise( (resolve, reject) => {
       docs.put(params, (err, data) => err ? reject(err) : resolve())
     });
@@ -26,7 +26,7 @@ class Pipeline {
       TableName: process.env.PIPELINES_TABLE,
       Key: this.getKey()
     };
-    console.log('Removing pipeline with params', params);
+    log.info('Removing pipeline with params', params);
     return new Promise( (resolve, reject) => {
       docs.delete(params, (err, data) => err ? reject(err) : resolve())
     });

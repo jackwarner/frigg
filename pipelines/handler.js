@@ -1,5 +1,4 @@
 'use strict';
-const AWS = require('aws-sdk');
 const Config = require('./config');
 const Pipeline = require('./pipeline');
 

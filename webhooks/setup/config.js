@@ -9,7 +9,7 @@ class Config {
   
   save(config) {
     const params = {
-      Body: JSON.stringify(this.config),
+      Body: JSON.stringify(config),
       Bucket: process.env.FRIGG_CONFIG_BUCKET,
       Key: CONFIG_KEY
     };
@@ -23,7 +23,12 @@ class Config {
       Key: CONFIG_KEY
     };
     log.info('Getting webhook config with params', params);
-    return s3.getObject(params).promise(res => JSON.parse(res.Body.toString('utf-8')));
+    return s3.getObject(params).promise(res => {
+      log.info('Got config response', res);
+      const config = JSON.parse(res.Body.toString('utf-8'));
+      log.info('Parsed response', config);
+      return config;
+    });
   }
 
   emptyBucket() {
