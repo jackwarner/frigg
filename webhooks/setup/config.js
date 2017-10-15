@@ -24,12 +24,13 @@ class Config {
       Key: CONFIG_KEY
     };
     log.info('Getting webhook config with params', params);
-    return s3.getObject(params).promise(res => {
-      log.info('Got config response', res);
-      const config = JSON.parse(res.Body.toString('utf-8'));
-      log.info('Parsed response', config);
-      return config;
-    });
+    return s3.getObject(params).promise()
+      .then(res => {
+        log.info('Got config response', res);
+        const config = JSON.parse(res.Body.toString('utf-8'));
+        log.info('Parsed response', config);
+        return config;
+      });
   }
 
   emptyBucket() {
