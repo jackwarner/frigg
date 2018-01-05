@@ -12,7 +12,7 @@ provider:
   stage: local
   runtime: nodejs6.10
   stackTags:
-   repo: ${env:REPO_NAME}
+   repo: ${env:REPO}
    frigg: pipeline
 
 functions:
@@ -83,8 +83,10 @@ resources:
           EnvironmentVariables:
             - Name: STAGE
               Value: ${env:STAGE}
-            - Name: REPO_NAME
-              Value: ${env:REPO_NAME}
+            - Name: REPO
+              Value: ${env:REPO}
+            - Name: OWNER
+              Value: ${env:OWNER}
         Artifacts:
           Type: CODEPIPELINE
         ServiceRole: { Ref: CodeBuildRole }

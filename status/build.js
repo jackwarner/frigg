@@ -1,7 +1,7 @@
 'use strict';
 const AWS = require('aws-sdk');
 const docs = new AWS.DynamoDB.DocumentClient({ apiVersion: '2012-08-10' });
-const log = require('../lib/log');
+const log = require('../utils/log');
 
 class Build {
 
@@ -16,7 +16,7 @@ class Build {
       TableName: process.env.BUILDS_TABLE,
       Item: this.getStartedItem()
     };
-    console.log('Creating build with params', params);
+    log.info('Creating build with params', params);
     return new Promise( (resolve, reject) => {
       docs.put(params, (err, data) => err ? reject(err) : resolve())
     });
@@ -27,7 +27,7 @@ class Build {
       TableName: process.env.BUILDS_TABLE,
       Item: this.getFinishedItem()
     };
-    console.log('Creating build with params', params);
+    log.info('Creating build with params', params);
     return new Promise( (resolve, reject) => {
       docs.put(params, (err, data) => err ? reject(err) : resolve())
     });
@@ -58,6 +58,6 @@ class Build {
     }
   }
 
-}
+};
 
 module.exports = Build;

@@ -1,0 +1,31 @@
+version: 0.2
+
+env:
+  variables:
+    STAGE: placeholder
+    PIPELINE_SERVICE_NAME: placeholder
+    OWNER: placeholder
+    REPO: placeholder
+    BRANCH: placeholder
+    BUILD_STATUS_TOPIC: placeholder
+    GITHUB_TOKEN: placeholder
+
+phases:
+  install:
+    commands:
+      - echo "nothing to install"
+  
+  pre_build:
+    commands:
+      - npm i
+      - npm i -g serverless
+
+  build:
+    commands:
+      - serverless deploy --stage $STAGE
+
+  post_build:
+    commands:
+      # - echo "build completed"
+      # call to frigg and notify of build status
+      - aws sns publish --topic-arn $BUILD_STATUS_TOPIC --message "{"buildStatus":"$CODEBUILD_BUILD_SUCCEEDING"}"

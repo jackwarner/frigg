@@ -1,19 +1,33 @@
 'use strict';
 const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
-const log = require('../lib/log');
+const log = require('../../utils/log');
 
-class PipelineTrigger {
+const CONFIG_FILE = 'frigg.yml'
+
+class PipelineEvent {
   constructor(event) {
-    log.info(`Instantiating pipeline trigger from event`, event);
+    log.info(`Creating new pipeline event from github event`, event);
     
-    this.configFile = 'frigg.yml';
-    this.body = JSON.parse(event.body);
-    this.event = event.headers['X-GitHub-Event'];
+    this.configFile = CONFIG_FILE;
+    this.body = event.body;
+    this.githubEvent = event.headers['X-GitHub-Event'];
     
-    log.info('Event', this.event);
+    log.info('GitHub event', this.githubEvent);
     // TODO remove when finished testing
     this.showIfEventHandled();
+  }
+
+  handle() {
+    if (this.isRelevant()) {
+      return this.send();
+    } else {
+      return Promise.resolve('Not a relevant pipeline event');
+    }
+  }
+
+  isRelevant() {
+    return this.getTopic();
   }
 
   send() {
@@ -41,17 +55,18 @@ class PipelineTrigger {
   }
 
   getTopic() {
+    log.info('Getting the pipeline notification topic');
     if (this.isUpsertAction()) {
       log.info('Create or update action, upserting pipeline');
       return process.env.UPSERT_PIPELINE_TOPIC;
     } else if (this.isRemoveBranchAction()) {
-      log.info('Remove or delete action, removing pipeline');
+      log.info('Remove or delete branch action, removing pipeline');
       return process.env.REMOVE_PIPELINE_TOPIC;
     } else if (this.isRemoveRepositoryAction()) {
       log.info('Remove repository action, removing all pipelines')
       return process.env.REMOVE_REPOSITORY_PIPELINES_TOPIC;
     } else {
-      throw new Error('No matching topic from action', action);
+      log.info('No matching topic, ignoring because not a relevant event');
     }
   }
 
@@ -77,15 +92,15 @@ class PipelineTrigger {
   }
 
   isCreateBranch() {
-    return this.isEvent('CREATE') || this.body && this.body.created;
+    return this.isGithubEvent('CREATE') || this.body && this.body.created;
   }
 
   isPushToBranch() {
-    return this.isEvent('PUSH');
+    return this.isGithubEvent('PUSH');
   }
 
   isDeleteBranch() {
-    return this.isEvent('DELETE') || this.body && this.body.deleted;
+    return this.isGithubEvent('DELETE') || this.body && this.body.deleted;
   }
 
   isFriggConfigAdded() {
@@ -104,20 +119,29 @@ class PipelineTrigger {
     return this.body && this.body.action && action && this.body.action.toUpperCase() === action.toUpperCase();
   }
 
-  isEvent(event) {
-    return this.event && event && this.event.toUpperCase() === event.toUpperCase();
+  isGithubEvent(githubEvent) {
+    return this.githubEvent && githubEvent && this.githubEvent.toUpperCase() === githubEvent.toUpperCase();
   }
 
   isFileAdded(file) {
-    return this.body && this.body.head_commit && this.body.head_commit.added && this.body.head_commit.added.includes(file)
+    log.info('Seeing if file was added', file);
+    const added = this.body && this.body.head_commit && this.body.head_commit.added && this.body.head_commit.added.includes(file);
+    log.info(`File ${ added ? 'was' : 'wasn\'t' } added`);
+    return added;
   }
 
   isFileModified(file) {
-    return this.body && this.body.head_commit && this.body.head_commit.modified && this.body.head_commit.modified.includes(file)
+    log.info('Seeing if file was modified', file);
+    const modified = this.body && this.body.head_commit && this.body.head_commit.modified && this.body.head_commit.modified.includes(file);
+    log.info(`File ${ modified ? 'was' : 'wasn\'t' } modified`);
+    return modified;
   }
 
   isFileRemoved(file) {
-    return this.body && this.body.head_commit && this.body.head_commit.removed && this.body.head_commit.removed.includes(file)
+    log.info('Seeing if file was removed', file);
+    const removed = this.body && this.body.head_commit && this.body.head_commit.removed && this.body.head_commit.removed.includes(file)
+    log.info(`File ${ removed ? 'was' : 'wasn\'t' } removed`);
+    return removed;
   }
 
   // TODO remove when finished testing
@@ -170,4 +194,4 @@ class PipelineTrigger {
 
 };
 
-module.exports = PipelineTrigger;
+module.exports = PipelineEvent;

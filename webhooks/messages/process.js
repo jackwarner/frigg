@@ -1,19 +1,12 @@
 'use strict';
-const PipelineTrigger = require('./pipelineTrigger');
-const Validator = require('./validator');
-const log = require('../lib/log');
+const Message = require('./message');
+const log = require('../../utils/log');
 
 module.exports.github = (event, context, callback) => {
-  const validator = new Validator(event);
-  if (validator.isPing()) {
-    return sendSuccess(callback);
-  } else {
-    validator.validate()
-      .then(res => new PipelineTrigger(event))
-      .then(pipelineTrigger => pipelineTrigger.send())
-      .then(res => sendSuccess(callback))
-      .catch(err => sendError(callback, err));
-  }
+  const message = new Message(event);
+  message.handle()
+    .then(res => sendSuccess(callback))
+    .catch(err => sendError(callback, err));
 }
 
 const sendSuccess = callback => {

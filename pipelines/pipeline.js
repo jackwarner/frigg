@@ -2,8 +2,13 @@
 const AWS = require('aws-sdk');
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });
 const cf = new AWS.CloudFormation({ apiVersion: '2010-05-15' });
-const Bash = require('../lib/bash');
-const log = require('../lib/log');
+const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const codebuild = new AWS.CodeBuild({ apiVersion: '2016-10-06' });
+const fs = require('fs-extra');
+const yaml = require('js-yaml');
+const Zip = require('../utils/zip');
+const log = require('../utils/log');
+const parameters = require('../utils/parameters');
 
 class Pipeline {
 
@@ -11,21 +16,70 @@ class Pipeline {
     log.info('Creating pipeline from config', config);
     this.config = config;
     this.templateDirectory = `pipelines/templates/${config.pipeline.name}/v${config.pipeline.version}`;
-    this.tempDirectory = `/tmp/pipeline`;
-    this.AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
-    this.AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-    this.bash = new Bash();
+    this.workingDirectory = '/tmp/pipeline';
   }
 
   deploy() {
     log.info('Deploying pipeline');
-    const repository = this.config.repository, pipeline = this.config.pipeline;
-    // TODO clean this up and mask access key / tokens when bash command is logged
-    let command = `cp ${this.templateDirectory} -R ${this.tempDirectory}/ && chmod -R 777 ${this.tempDirectory}`;
-    command += ` && cd ${this.tempDirectory} && export AWS_ACCESS_KEY_ID=${this.AWS_ACCESS_KEY_ID} && export AWS_SECRET_ACCESS_KEY=${this.AWS_SECRET_ACCESS_KEY} && export GITHUB_TOKEN=${process.env.GITHUB_TOKEN}`;
-    command += ` && export HOME=${this.tempDirectory} && export STAGE=${pipeline.stage} && export PIPELINE_SERVICE_NAME=${pipeline.serviceName} && export REPO_NAME=${repository.fullyQualifiedName} && export OWNER=${repository.owner} && export REPO=${repository.name} && export BRANCH=${repository.branch}`;
-    command += ` && npm i && npm run deploy`;
-    return this.bash.execute(command).then(res => this.emitPipelineAdded());
+    return this.copyBuildArtifactTemplate()
+      .then(res => parameters.getGitHubAccessToken())
+      .then(token => this.updateBuildArtifactProperties(token))
+      .then(res => this.createBuildArtifact())
+      .then(artifact => this.uploadBuildArtifact(artifact))
+      .then(artifactMetaData => this.triggerBuild(artifactMetaData));
+  }
+
+  copyBuildArtifactTemplate() {
+    log.info(`Clearing existing pipeline templates from ${this.workingDirectory}`);
+    fs.emptyDirSync(this.workingDirectory);
+    log.info(`Copying pipeline templates from ${this.templateDirectory} to ${this.workingDirectory}`);
+    fs.copySync(this.templateDirectory, this.workingDirectory);
+    return Promise.resolve();
+  }
+
+  updateBuildArtifactProperties(githubToken) {
+    let buildspec = yaml.safeLoad(fs.readFileSync(`${this.workingDirectory}/buildspec.yml`, 'utf8'));
+    log.info('Parsed buildspec', buildspec);
+    const repo = this.config.repository;
+    const pipeline = this.config.pipeline;
+    buildspec.env.variables = {
+      STAGE: pipeline.stage,
+      PIPELINE_SERVICE_NAME: pipeline.serviceName,
+      OWNER: repo.owner,
+      REPO: repo.name,
+      BRANCH: repo.branch,
+      BUILD_STATUS_TOPIC: process.env.PIPELINE_ADDED_TOPIC,
+      GITHUB_TOKEN: githubToken
+    };
+    log.info('Writing new buildspec', buildspec);
+    fs.writeFileSync(`${this.workingDirectory}/buildspec.yml`, yaml.safeDump(buildspec), 'utf-8');
+    return Promise.resolve();
+  }
+
+  createBuildArtifact() {
+    log.info('Creating build artifact');
+    let zip = new Zip(this.workingDirectory);
+    return Promise.resolve(zip);
+  }
+
+  uploadBuildArtifact(zip) {
+    const params = {
+      Body: zip, //zip.toBuffer(),
+      Bucket: process.env.BUILD_ARTIFACT_BUCKET,
+      Key: 'build.zip'
+    };
+    log.info('Uploading build artifact with params', params);
+    return s3.putObject(params).promise();
+  }
+
+  triggerBuild(artifactMetaData) {
+    log.info('Received artifact meta data', artifactMetaData);
+    const params = {
+      projectName: process.env.BUILD_PROJECT_NAME,
+      sourceVersion: artifactMetaData.VersionId
+    };
+    log.info('Triggering build with params', params);
+    return codebuild.startBuild(params).promise();
   }
 
   remove(stackName) {
@@ -78,7 +132,7 @@ class Pipeline {
         repository: this.config.repository,
         pipeline: this.config.pipeline
       }),
-      TopicArn: process.env.PIPELINE_ADDED
+      TopicArn: process.env.PIPELINE_ADDED_TOPIC
     };
     log.info('Sending pipeline added event with params', params);
     return sns.publish(params).promise();
@@ -91,7 +145,7 @@ class Pipeline {
         repository: this.config.repository,
         pipeline: this.config.pipeline
       }),
-      TopicArn: process.env.PIPELINE_REMOVED
+      TopicArn: process.env.PIPELINE_REMOVED_TOPIC
     };
     log.info('Sending pipeline removed event with params', params);
     return sns.publish(params).promise();

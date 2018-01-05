@@ -6,9 +6,7 @@
   "dependencies": {
     "serverless": "^1.14.0"
   },
-  "scripts": {
-    "deploy": "serverless deploy --stage $STAGE"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/santaswap/test.git"
